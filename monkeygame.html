@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monkey Path Game</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin: 20px auto;
+            width: max-content;
+        }
+
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid black;
+            font-size: 2rem;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Monkey Path Game</h1>
+    <div class="game-board" id="game-board">
+        <div class="cell" id="cell-0-0">🐵</div>
+        <div class="cell" id="cell-0-1"></div>
+        <div class="cell" id="cell-0-2">🍌</div>
+        <div class="cell" id="cell-1-0"></div>
+        <div class="cell" id="cell-1-1">🐜</div>
+        <div class="cell" id="cell-1-2"></div>
+        <div class="cell" id="cell-2-0"></div>
+        <div class="cell" id="cell-2-1"></div>
+        <div class="cell" id="cell-2-2">👶</div>
+    </div>
+    <p>Score: <span id="score">0</span></p>
+    <button onclick="move('up')">Up</button>
+    <button onclick="move('down')">Down</button>
+    <button onclick="move('left')">Left</button>
+    <button onclick="move('right')">Right</button>
+    <button onclick="resetGame()">Reset</button>
+    <script>
+        let monkeyPosition = [0, 0];
+        let score = 0;
+
+        function move(direction) {
+            let [x, y] = monkeyPosition;
+
+            switch(direction) {
+                case 'up':
+                    if (x > 0) x--;
+                    break;
+                case 'down':
+                    if (x < 2) x++;
+                    break;
+                case 'left':
+                    if (y > 0) y--;
+                    break;
+                case 'right':
+                    if (y < 2) y++;
+                    break;
+                default:
+                    break;
+            }
+
+            updatePosition(x, y);
+        }
+
+        function updatePosition(newX, newY) {
+            // Clear old position
+            const oldCell = document.getElementById(`cell-${monkeyPosition[0]}-${monkeyPosition[1]}`);
+            if (oldCell) oldCell.textContent = '';
+
+            // Update position
+            monkeyPosition = [newX, newY];
+            const newCell = document.getElementById(`cell-${newX}-${newY}`);
+            newCell.textContent = '🐵';
+
+            checkReward(newX, newY);
+        }
+
+        function checkReward(x, y) {
+            const tile = document.getElementById(`cell-${x}-${y}`).textContent;
+
+            if (tile === '🍌') {
+                score += 1;  // Score +1 for finding a banana
+                alert('You found a banana! +1 point!');
+            } else if (tile === '🐜') {
+                score -= 1;  // Score -1 for encountering an ant
+                alert('You encountered an ant! -1 point!');
+            }
+
+            document.getElementById('score').textContent = score;
+        }
+
+        function resetGame() {
+            // Clear all cells
+            const cells = document.getElementsByClassName('cell');
+            for (let cell of cells) {
+                cell.textContent = '';
+            }
+
+            // Reset position and score
+            monkeyPosition = [0, 0];
+            score = 0;
+
+            // Set monkey back to starting position
+            const startCell = document.getElementById(`cell-0-0`);
+            startCell.textContent = '🐵';
+
+            // Update score display
+            document.getElementById('score').textContent = score;
+        }
+    </script>
+</body>
+</html>
