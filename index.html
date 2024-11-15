@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เกมลิงกินกล้วย</title>
+    <title>Monkey RL Game</title>
     <style>
         body {
             text-align: center;
@@ -30,7 +30,7 @@
     </style>
 </head>
 <body>
-    <h1>เกมลิงกินกล้วย</h1>
+    <h1>Monkey Reinforcement Learning Game</h1>
     <div class="game-board" id="game-board">
         <div class="cell" id="cell-0-0">🐵</div>
         <div class="cell" id="cell-0-1"></div>
@@ -43,37 +43,34 @@
         <div class="cell" id="cell-2-2">👶</div>
     </div>
     <p>Score: <span id="score">0</span></p>
-    <button onclick="move('up')">ขึ้น</button>
-    <button onclick="move('down')">ลง</button>
-    <button onclick="move('left')">ซ้าย</button>
-    <button onclick="move('right')">ขวา</button>
+    <p>Use arrow keys to move the monkey!</p>
     <button onclick="resetGame()">Reset</button>
     <script>
         let monkeyPosition = [0, 0];
         let score = 0;
 
-        function move(direction) {
+        document.addEventListener('keydown', function(event) {
             let [x, y] = monkeyPosition;
 
-            switch(direction) {
-                case 'up':
+            switch(event.key) {
+                case 'ArrowUp':
                     if (x > 0) x--;
                     break;
-                case 'down':
+                case 'ArrowDown':
                     if (x < 2) x++;
                     break;
-                case 'left':
+                case 'ArrowLeft':
                     if (y > 0) y--;
                     break;
-                case 'right':
+                case 'ArrowRight':
                     if (y < 2) y++;
                     break;
                 default:
-                    break;
+                    return;
             }
 
             updatePosition(x, y);
-        }
+        });
 
         function updatePosition(newX, newY) {
             // Clear old position
