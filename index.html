@@ -1,1 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Math Puzzle Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 150px);
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f0f0f0;
+      padding: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      border: 1px solid #ccc;
+    }
+    .input {
+      width: 80%;
+      padding: 5px;
+      text-align: center;
+      font-size: 16px;
+    }
+    .button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .button:hover {
+      background-color: #45a049;
+    }
+    .correct {
+      background-color: lightgreen;
+    }
+    .incorrect {
+      background-color: lightcoral;
+    }
+    .score, .timer, .message {
+      margin: 10px 0;
+      font-size: 20px;
+    }
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: repeat(1, 150px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Interactive Math Puzzle Game</h1>
+  
+  <!-- Difficulty Selector -->
+  <div>
+    <label for="difficulty">Select Difficulty:</label>
+    <select id="difficulty">
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+    <button class="button" onclick="startGame()">Start Game</button>
+  </div>
 
+  <div class="timer">Time Remaining: <span id="time">30</span>s</div>
+  <div id="grid" class="grid"></div>
+  <div class="score">Score: <span id="score">0</span></div>
+  <button class="button" id="checkButton" onclick="checkAnswers()" style="display: none;">Check Answers</button>
+  <button class="button" id="restartButton" onclick="restartGame()" style="display: none;">Restart Game</button>
+  <div class="message" id="message"></div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const scoreElement = document.getElementById('score');
+    const messageElement = document.getElementById('message');
+    const timerElement = document.getElementById('time');
+    const checkButton = document.getElementById('checkButton');
+    const restartButton = document.getElementById('restartButton');
+    const difficultySelect = document.getElementById('difficulty');
+
+    let score = 0;
+    let timeRemaining = 30;
+    let timer;
+    let equations = [];
+
+    // Generate random equations based on difficulty
+    const generateEquations = (difficulty) => {
+      const newEquations = [];
+      let range = 10; // Default range for easy mode
+
+      if (difficulty === 'medium') range = 50;
+      if (difficulty === 'hard') range = 100;
+
+      for (let i = 0; i < 6; i++) {
+        const num1 = Math.floor(Math.random() * range) + 1;
+        const num2 = Math.floor(Math.random() * range) + 1;
+        const operator = ['+', '-', '*', '/'][Math.floor(Math.random() * 4)];
+
+        let solution;
+        if (operator === '+') {
+          solution = num1 + num2;
+        } else if (operator === '-') {
+          solution = num1 - num2;
+        } else if (operator === '*') {
+          solution = num1 * num2;
+        } else {
+          solution = Math.floor(num1 / num2) || 0; // Ensure integer division
+        }
+
+        newEquations.push({ eq: `${num1} ${operator} ${num2}`, answer: solution });
+      }
+      return newEquations;
+    };
+
+    // Start the game
+    const startGame = () => {
+      const difficulty = difficultySelect.value;
+      score = 0;
+      timeRemaining = 30;
+      scoreElement.textContent = score;
+      messageElement.textContent = "";
+      equations = generateEquations(difficulty);
+
+      // Reset grid
+      grid.innerHTML = '';
+      equations.forEach((item) => {
+        const equationCell = document.createElement('div');
+        equationCell.className = 'cell';
+        equationCell.textContent = item.eq;
+        grid.appendChild(equationCell);
+
+        const inputCell = document.createElement('input');
+        inputCell.type = 'number';
+        inputCell.className = 'input';
+        inputCell.dataset.answer = item.answer;
+        grid.appendChild(inputCell);
+      });
+
+      // Show check button and hide restart button
+      checkButton.style.display = "inline-block";
+      restartButton.style.display = "none";
+
+      // Start timer
+      startTimer();
+    };
+
+    // Check answers
+    const checkAnswers = () => {
+      const inputs = document.querySelectorAll('.input');
+      let allCorrect = true;
+
+      inputs.forEach(input => {
+        const userAnswer = parseInt(input.value, 10);
+        const correctAnswer = parseInt(input.dataset.answer, 10);
+
+        if (userAnswer === correctAnswer) {
+          input.classList.add('correct');
+          input.classList.remove('incorrect');
+          score += 1;
+        } else {
+          input.classList.add('incorrect');
+          input.classList.remove('correct');
+          allCorrect = false;
+        }
+      });
+      scoreElement.textContent = score;
+
+      if (allCorrect) {
+        messageElement.textContent = "🎉 Well done! You solved all the puzzles!";
+        clearInterval(timer);
+        checkButton.style.display = "none";
+        restartButton.style.display = "inline-block";
+      }
+    };
+
+    // Start the timer
+    const startTimer = () => {
+      clearInterval(timer);
+      timer = setInterval(() => {
+        timeRemaining -= 1;
+        timerElement.textContent = timeRemaining;
+
+        if (timeRemaining <= 0) {
+          clearInterval(timer);
+          messageElement.textContent = "⏰ Time's up! Try again.";
+          document.querySelectorAll('.input').forEach(input => input.disabled = true);
+          checkButton.style.display = "none";
+          restartButton.style.display = "inline-block";
+        }
+      }, 1000);
+    };
+
+    // Restart the game
+    const restartGame = () => {
+      startGame();
+    };
+  </script>
+</body>
+</html>
