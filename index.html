@@ -21,6 +21,7 @@
 <script>
 let names = [];
 let rollingInterval = null;
+let dataLoaded = false;
 
 // Load the names from the CSV file
 fetch('names.csv')
@@ -30,13 +31,20 @@ fetch('names.csv')
       name: name,
       selected: false
     }));
+    dataLoaded = true;
     console.log("Loaded names:", names);
   })
   .catch(error => {
     console.error('Error loading names.csv:', error);
+    document.getElementById('result').innerText = 'Error loading names. Check the console.';
   });
 
 function startRolling() {
+  if (!dataLoaded) {
+    document.getElementById('result').innerText = 'Names are still loading. Please wait...';
+    return;
+  }
+
   const availableNames = names.filter(person => !person.selected);
 
   if (availableNames.length === 0) {
@@ -51,6 +59,7 @@ function startRolling() {
     return;
   }
 
+  let index = 0;
   rollingInterval = setInterval(() => {
     const randomPerson = availableNames[Math.floor(Math.random() * availableNames.length)];
     document.getElementById('result').innerText = randomPerson.name;
