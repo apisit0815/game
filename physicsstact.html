@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Stack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; touch-action: none; }
+        canvas { display: block; }
+        .ui-panel {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        /* Fade out effect for start screen */
+        .fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white font-sans select-none">
+
+    <!-- Start Screen Overlay -->
+    <div id="start-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/95 backdrop-blur-sm transition-opacity duration-700">
+        <div class="text-center p-8 max-w-lg border border-slate-700 rounded-3xl bg-slate-800/50 shadow-2xl">
+            <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-2 drop-shadow-sm">Physics Stack</h1>
+            <p class="text-slate-400 text-sm uppercase tracking-widest mb-8">Balance Challenge</p>
+            
+            <div class="space-y-6 text-slate-200 mb-10 text-left bg-slate-900/50 p-6 rounded-2xl border border-slate-700/50">
+                <div class="flex items-start gap-4">
+                    <div class="bg-indigo-600/20 p-2 rounded-lg text-2xl">🏗️</div>
+                    <div>
+                        <h3 class="font-bold text-indigo-400">Build High</h3>
+                        <p class="text-sm text-slate-400">Stack shapes on the platform to reach the highest score.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="bg-emerald-600/20 p-2 rounded-lg text-2xl">🖱️</div>
+                    <div>
+                        <h3 class="font-bold text-emerald-400">Click to Drop</h3>
+                        <p class="text-sm text-slate-400">Select a shape from the bottom menu, then click in the sky to spawn it.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="bg-rose-600/20 p-2 rounded-lg text-2xl">⚖️</div>
+                    <div>
+                        <h3 class="font-bold text-rose-400">Physics Matters</h3>
+                        <p class="text-sm text-slate-400">Shapes have weight and momentum. Keep your tower balanced!</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="group relative px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-xl shadow-lg hover:shadow-indigo-500/50 transition-all transform hover:scale-105 active:scale-95 w-full">
+                <span class="relative z-10 flex items-center justify-center gap-2">
+                    Start Building 
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Overlay UI (Hidden initially by start screen opacity, but technically visible underneath) -->
+    <div class="absolute top-0 left-0 w-full p-4 pointer-events-none flex justify-between items-start z-10">
+        <div>
+            <h1 class="text-2xl font-bold text-yellow-400 drop-shadow-md">Physics Stack</h1>
+            <p class="text-slate-300 text-sm">Build the tallest tower on the platform!</p>
+        </div>
+        <div class="text-right">
+            <p class="text-xs text-slate-400 uppercase tracking-wider">Current Height</p>
+            <p id="height-display" class="text-3xl font-mono font-bold text-green-400">0.0m</p>
+        </div>
+    </div>
+
+    <!-- Controls (Bottom) -->
+    <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-2 ui-panel bg-slate-800/80 p-2 rounded-2xl border border-slate-700 shadow-xl pointer-events-auto z-20">
+        <button onclick="setShape('square')" id="btn-square" class="shape-btn p-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition-all active:scale-95 ring-2 ring-offset-2 ring-offset-slate-900 ring-indigo-400">
+            <div class="w-6 h-6 bg-white rounded-sm"></div>
+        </button>
+        <button onclick="setShape('circle')" id="btn-circle" class="shape-btn p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all active:scale-95">
+            <div class="w-6 h-6 bg-white rounded-full"></div>
+        </button>
+        <button onclick="setShape('rect')" id="btn-rect" class="shape-btn p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all active:scale-95">
+            <div class="w-8 h-4 bg-white rounded-sm"></div>
+        </button>
+        <button onclick="setShape('triangle')" id="btn-triangle" class="shape-btn p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all active:scale-95">
+            <div class="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[20px] border-b-white"></div>
+        </button>
+        
+        <div class="w-px bg-slate-600 mx-2"></div>
+        
+        <button onclick="resetGame()" class="p-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition-all active:scale-95 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/><path d="M3 3v9h9"/></svg>
+            Reset
+        </button>
+    </div>
+
+    <!-- Canvas Container -->
+    <div id="game-container" class="w-full h-screen cursor-crosshair"></div>
+
+    <script>
+        // --- Game State ---
+        let gameActive = false;
+
+        // --- Matter.js Setup ---
+        const Engine = Matter.Engine,
+              Render = Matter.Render,
+              Runner = Matter.Runner,
+              Bodies = Matter.Bodies,
+              Composite = Matter.Composite,
+              Events = Matter.Events,
+              Mouse = Matter.Mouse,
+              MouseConstraint = Matter.MouseConstraint;
+        
+        // Global variables to hold Matter.js instances
+        let engine;
+        let render;
+        let runner;
+
+        // Current shape selection
+        let currentShape = 'square';
+        const colors = {
+            square: '#4f46e5', // indigo-600
+            circle: '#e11d48', // rose-600
+            rect:   '#059669', // emerald-600
+            triangle: '#d97706' // amber-600
+        };
+
+        // Initialize Game
+        function init() {
+            // Create engine
+            engine = Engine.create();
+            const world = engine.world;
+
+            // Create renderer
+            const container = document.getElementById('game-container');
+            render = Render.create({
+                element: container,
+                engine: engine,
+                options: {
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                    wireframes: false,
+                    background: '#0f172a', // slate-900
+                    pixelRatio: window.devicePixelRatio
+                }
+            });
+
+            // Platform
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            // Ground (invisible boundary far below)
+            const ground = Bodies.rectangle(width / 2, height + 100, width, 100, { isStatic: true });
+            
+            // The Balance Platform
+            const platform = Bodies.rectangle(width / 2, height - 100, 300, 40, { 
+                isStatic: true,
+                render: { fillStyle: '#94a3b8' },
+                chamfer: { radius: 4 }
+            });
+
+            Composite.add(world, [ground, platform]);
+
+            // Add Mouse Control
+            const mouse = Mouse.create(render.canvas);
+            const mouseConstraint = MouseConstraint.create(engine, {
+                mouse: mouse,
+                constraint: {
+                    stiffness: 0.2,
+                    render: { visible: false }
+                }
+            });
+            Composite.add(world, mouseConstraint);
+
+            // Keep mouse in sync with rendering
+            render.mouse = mouse;
+
+            // Handle Clicks to Spawn
+            render.canvas.addEventListener('mousedown', (e) => {
+                // Prevent spawning if game hasn't started
+                if (!gameActive) return;
+
+                // Don't spawn if clicking UI or dragging an existing body
+                if (mouseConstraint.body) return;
+                
+                // Get click position relative to canvas
+                const rect = render.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // Only spawn if clicking in the top 80% of screen (avoid accidentally spawning under platform)
+                if (y < height - 150) {
+                    spawnShape(x, y);
+                }
+            });
+
+            Render.run(render);
+            
+            // Create and run the runner
+            runner = Runner.create();
+            Runner.run(runner, engine);
+
+            // Update Loop for Height Calculation
+            Events.on(engine, 'afterUpdate', updateScore);
+        }
+
+        function spawnShape(x, y) {
+            let body;
+            const commonOptions = {
+                restitution: 0.3, // Bounciness
+                friction: 0.5,    // Friction
+                density: 0.001
+            };
+
+            switch(currentShape) {
+                case 'square':
+                    body = Bodies.rectangle(x, y, 60, 60, { 
+                        ...commonOptions,
+                        render: { fillStyle: colors.square, strokeStyle: '#fff', lineWidth: 2 }
+                    });
+                    break;
+                case 'circle':
+                    body = Bodies.circle(x, y, 35, { 
+                        ...commonOptions,
+                        render: { fillStyle: colors.circle, strokeStyle: '#fff', lineWidth: 2 }
+                    });
+                    break;
+                case 'rect':
+                    body = Bodies.rectangle(x, y, 120, 40, { 
+                        ...commonOptions,
+                        render: { fillStyle: colors.rect, strokeStyle: '#fff', lineWidth: 2 }
+                    });
+                    break;
+                case 'triangle':
+                    body = Bodies.polygon(x, y, 3, 40, { 
+                        ...commonOptions,
+                        render: { fillStyle: colors.triangle, strokeStyle: '#fff', lineWidth: 2 }
+                    });
+                    // Rotate triangle to point up initially
+                    Matter.Body.rotate(body, Math.PI / 6);
+                    break;
+            }
+
+            if (body) {
+                Composite.add(engine.world, body);
+            }
+        }
+
+        // --- Game Logic Helpers ---
+
+        function updateScore() {
+            if (!gameActive) return;
+
+            const bodies = Composite.allBodies(engine.world);
+            let highestY = window.innerHeight - 120; // Start at platform level
+
+            bodies.forEach(body => {
+                // Ignore static bodies (ground/platform) and constraints
+                if (!body.isStatic) {
+                    // Find the lowest Y value (highest on screen)
+                    if (body.position.y < highestY) {
+                        highestY = body.position.y;
+                    }
+                }
+            });
+
+            // Calculate height in "meters" (arbitrary pixels to meters conversion)
+            const platformY = window.innerHeight - 120;
+            const pixelHeight = Math.max(0, platformY - highestY);
+            const meters = (pixelHeight / 50).toFixed(1); // 50px = 1m
+
+            document.getElementById('height-display').innerText = `${meters}m`;
+        }
+
+        // --- UI Interaction ---
+
+        window.startGame = function() {
+            gameActive = true;
+            document.getElementById('start-screen').classList.add('fade-out');
+        };
+
+        window.setShape = function(shape) {
+            currentShape = shape;
+            
+            // Update UI buttons
+            document.querySelectorAll('.shape-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'ring-2', 'ring-indigo-400');
+                btn.classList.add('bg-slate-700');
+            });
+            
+            // Highlight active
+            const activeBtn = document.getElementById(`btn-${shape}`);
+            activeBtn.classList.remove('bg-slate-700');
+            activeBtn.classList.add('bg-indigo-600', 'ring-2', 'ring-offset-2', 'ring-offset-slate-900', 'ring-indigo-400');
+        };
+
+        window.resetGame = function() {
+            // 1. Stop the Matter.js runner/game loop immediately
+            if (runner) {
+                Runner.stop(runner);
+            }
+            
+            // 2. Clear all event listeners from the engine (including updateScore)
+            Events.off(engine, 'afterUpdate', updateScore);
+
+            // 3. Clear all bodies from the world, except potentially static ones (platform)
+            Composite.clear(engine.world, false, true); 
+            
+            // 4. Fully destroy the renderer to clean up the canvas context
+            if (render && render.canvas) {
+                render.canvas.remove();
+            }
+            Render.stop(render);
+            
+            // 5. Re-initialize the entire engine and renderer
+            init();
+
+            // Reset score
+            document.getElementById('height-display').innerText = "0.0m";
+        };
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            if (render && render.canvas) {
+                render.canvas.width = window.innerWidth;
+                render.canvas.height = window.innerHeight;
+            }
+        });
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>
