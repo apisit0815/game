@@ -1,0 +1,323 @@
+import React, { useState, useEffect } from 'react';
+import { RefreshCw, Trash2, AlertTriangle, Leaf, Trophy, ArrowRight, Info } from 'lucide-react';
+
+// --- Configuration & Data ---
+
+const BINS = [
+  {
+    id: 'green',
+    color: 'bg-green-500',
+    borderColor: 'border-green-700',
+    hoverColor: 'hover:bg-green-600',
+    textColor: 'text-green-900',
+    name: 'Organic / Wet',
+    thaiName: 'ขยะเปียก',
+    icon: <Leaf className="w-8 h-8" />,
+    description: 'Food scraps, leaves, decomposable items.'
+  },
+  {
+    id: 'yellow',
+    color: 'bg-yellow-400',
+    borderColor: 'border-yellow-600',
+    hoverColor: 'hover:bg-yellow-500',
+    textColor: 'text-yellow-900',
+    name: 'Recycle',
+    thaiName: 'ขยะรีไซเคิล',
+    icon: <RefreshCw className="w-8 h-8" />,
+    description: 'Glass, plastic, paper, metal.'
+  },
+  {
+    id: 'red',
+    color: 'bg-red-500',
+    borderColor: 'border-red-700',
+    hoverColor: 'hover:bg-red-600',
+    textColor: 'text-red-900',
+    name: 'Hazardous',
+    thaiName: 'ขยะอันตราย',
+    icon: <AlertTriangle className="w-8 h-8" />,
+    description: 'Batteries, chemicals, electronics.'
+  },
+  {
+    id: 'blue',
+    color: 'bg-blue-500',
+    borderColor: 'border-blue-700',
+    hoverColor: 'hover:bg-blue-600',
+    textColor: 'text-blue-900',
+    name: 'General',
+    thaiName: 'ขยะทั่วไป',
+    icon: <Trash2 className="w-8 h-8" />,
+    description: 'Wrappers, foam, dirty plastics.'
+  }
+];
+
+const WASTE_ITEMS = [
+  // Red Bin (Hazardous)
+  { name: 'Old Battery', thaiName: 'ถ่านไฟฉายเก่า', emoji: '🔋', binId: 'red', explanation: 'Batteries contain heavy metals like lead and mercury that poison the soil!' },
+  { name: 'Spray Can', thaiName: 'กระป๋องสเปรย์', emoji: '🥫', binId: 'red', explanation: 'Pressurized cans can explode and contain dangerous chemicals.' },
+  { name: 'Light Bulb', thaiName: 'หลอดไฟ', emoji: '💡', binId: 'red', explanation: 'Contains mercury vapor which is toxic if inhaled.' },
+  { name: 'Expired Medicine', thaiName: 'ยาหมดอายุ', emoji: '💊', binId: 'red', explanation: 'Chemicals in medicine contaminate water sources.' },
+  
+  // Green Bin (Organic)
+  { name: 'Leftover Rice', thaiName: 'เศษข้าว', emoji: '🍚', binId: 'green', explanation: 'This is biodegradable and can be turned into fertilizer.' },
+  { name: 'Banana Peel', thaiName: 'เปลือกกล้วย', emoji: '🍌', binId: 'green', explanation: 'Fruit skins rot quickly and are perfect for composting.' },
+  { name: 'Fish Bone', thaiName: 'ก้างปลา', emoji: '🐟', binId: 'green', explanation: 'Food waste goes in the green bin to decompose.' },
+  { name: 'Dried Leaves', thaiName: 'ใบไม้แห้ง', emoji: '🍂', binId: 'green', explanation: 'Natural plant matter returns nutrients to the earth.' },
+
+  // Yellow Bin (Recycle)
+  { name: 'Plastic Bottle', thaiName: 'ขวดพลาสติก', emoji: '🥤', binId: 'yellow', explanation: 'PET plastic can be melted down to make new fabrics or bottles.' },
+  { name: 'Cardboard Box', thaiName: 'กล่องกระดาษ', emoji: '📦', binId: 'yellow', explanation: 'Paper fibers can be reused to make new boxes.' },
+  { name: 'Glass Jar', thaiName: 'ขวดแก้ว', emoji: '🫙', binId: 'yellow', explanation: 'Glass is 100% recyclable and can be reused endlessly.' },
+  { name: 'Soda Can', thaiName: 'กระป๋องน้ำอัดลม', emoji: '🥫', binId: 'yellow', explanation: 'Aluminum is valuable and easy to recycle.' },
+  { name: 'Old Newspaper', thaiName: 'หนังสือพิมพ์เก่า', emoji: '📰', binId: 'yellow', explanation: 'Clean paper should always be recycled.' },
+
+  // Blue Bin (General)
+  { name: 'Foam Box', thaiName: 'กล่องโฟม', emoji: '🥡', binId: 'blue', explanation: 'Polystyrene foam is very hard to recycle and takes 500 years to degrade.' },
+  { name: 'Snack Wrapper', thaiName: 'ซองขนม', emoji: '🍬', binId: 'blue', explanation: 'Multi-layer plastic wrappers cannot be easily separated for recycling.' },
+  { name: 'Used Tissue', thaiName: 'ทิชชู่ใช้แล้ว', emoji: '🤧', binId: 'blue', explanation: 'Tissues are too dirty and short-fibered to be recycled.' },
+  { name: 'Dirty Plastic Bag', thaiName: 'ถุงพลาสติกเปื้อน', emoji: '🛍️', binId: 'blue', explanation: 'Contaminated thin plastic is difficult to clean and recycle.' },
+];
+
+// --- Components ---
+
+const GameHeader = ({ score, streak }) => (
+  <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm mb-6 border border-slate-100">
+    <div className="flex items-center gap-2">
+      <div className="bg-yellow-100 p-2 rounded-full">
+        <Trophy className="text-yellow-600 w-5 h-5" />
+      </div>
+      <div>
+        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Score</p>
+        <p className="text-2xl font-black text-gray-800">{score}</p>
+      </div>
+    </div>
+    <div className="flex items-center gap-2">
+      <div className="text-right">
+        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Streak</p>
+        <p className="text-2xl font-black text-orange-500 flex items-center justify-end gap-1">
+          {streak} <span className="text-lg">🔥</span>
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+const BinCard = ({ bin, onClick, disabled }) => (
+  <button
+    onClick={() => onClick(bin.id)}
+    disabled={disabled}
+    className={`
+      ${bin.color} ${bin.borderColor}
+      border-b-4 active:border-b-0 active:translate-y-1
+      w-full p-4 rounded-xl shadow-lg transition-transform duration-100
+      flex flex-col items-center justify-center gap-2
+      group relative overflow-hidden
+      disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+    `}
+  >
+    <div className="bg-white/20 p-3 rounded-full text-white backdrop-blur-sm group-hover:scale-110 transition-transform">
+      {bin.icon}
+    </div>
+    <div className="text-center">
+      <h3 className="text-white font-bold text-lg leading-tight drop-shadow-md">{bin.name}</h3>
+      <p className="text-white/90 text-sm font-medium">{bin.thaiName}</p>
+    </div>
+  </button>
+);
+
+const FeedbackModal = ({ isCorrect, correctBin, item, onNext }) => {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => {}} />
+      
+      {/* Modal Card */}
+      <div className="relative bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-bounce-short">
+        
+        {/* Header Color based on result */}
+        <div className={`p-6 text-center ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
+          <div className="text-6xl mb-4 transform hover:scale-110 transition-transform cursor-default">
+            {isCorrect ? '🎉' : '🤔'}
+          </div>
+          <h2 className={`text-2xl font-black ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+            {isCorrect ? 'Awesome Job!' : 'Not Quite!'}
+          </h2>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          {!isCorrect && (
+            <div className="bg-gray-50 p-4 rounded-xl border-l-4 border-gray-400">
+              <p className="text-gray-500 text-sm font-bold uppercase mb-1">Correct Bin:</p>
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-full ${correctBin.color} flex items-center justify-center text-white shrink-0`}>
+                  {correctBin.icon}
+                </div>
+                <div>
+                  <span className={`font-bold ${correctBin.textColor} block`}>{correctBin.name}</span>
+                  <span className="text-gray-500 text-sm">{correctBin.thaiName}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-blue-50 p-4 rounded-xl">
+             <div className="flex gap-3 items-start">
+               <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+               <p className="text-blue-900 font-medium text-sm leading-relaxed">
+                 {item.explanation}
+               </p>
+             </div>
+          </div>
+
+          <button
+            onClick={onNext}
+            className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-colors active:scale-95 transform"
+          >
+            Next Item <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default function WasteSortHero() {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [lastResult, setLastResult] = useState(null);
+  const [gameItems, setGameItems] = useState([]);
+
+  // Initialize Game
+  useEffect(() => {
+    const shuffled = [...WASTE_ITEMS].sort(() => Math.random() - 0.5);
+    setGameItems(shuffled);
+  }, []);
+
+  const handleBinSelect = (selectedBinId) => {
+    const currentItem = gameItems[currentQuestionIndex];
+    if (!currentItem) return;
+
+    const isCorrect = currentItem.binId === selectedBinId;
+
+    if (isCorrect) {
+      setScore(s => s + 10 + (streak * 2));
+      setStreak(s => s + 1);
+      setLastResult({ correct: true });
+    } else {
+      setStreak(0);
+      setLastResult({ correct: false });
+    }
+
+    setShowFeedback(true);
+  };
+
+  const nextQuestion = () => {
+    setShowFeedback(false);
+    
+    // Small delay to allow modal to close before switching content
+    setTimeout(() => {
+        setLastResult(null);
+        if (currentQuestionIndex >= gameItems.length - 1) {
+            // Reshuffle if end of list
+            const shuffled = [...WASTE_ITEMS].sort(() => Math.random() - 0.5);
+            setGameItems(shuffled);
+            setCurrentQuestionIndex(0);
+        } else {
+            setCurrentQuestionIndex(prev => prev + 1);
+        }
+    }, 100);
+  };
+
+  if (gameItems.length === 0) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">
+            Loading Waste Data...
+        </div>
+    );
+  }
+
+  const currentItem = gameItems[currentQuestionIndex];
+  
+  // Safety check
+  if (!currentItem) return <div className="p-8 text-center">Preparing next item...</div>;
+
+  const correctBinForCurrent = BINS.find(b => b.id === currentItem.binId);
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 flex items-center justify-center p-0 md:p-4">
+      <div className="w-full max-w-md bg-white md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col min-h-[100dvh] md:min-h-[800px]">
+        
+        {/* Top Bar Decoration */}
+        <div className="h-2 flex w-full shrink-0">
+          <div className="h-full w-1/4 bg-green-500"></div>
+          <div className="h-full w-1/4 bg-yellow-400"></div>
+          <div className="h-full w-1/4 bg-red-500"></div>
+          <div className="h-full w-1/4 bg-blue-500"></div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 p-6 flex flex-col">
+          
+          <div className="mb-2 shrink-0">
+             <h1 className="text-2xl font-black text-slate-800 text-center">Waste Sort Hero</h1>
+             <p className="text-center text-slate-400 text-xs font-medium uppercase tracking-widest">Thai Standards Edition</p>
+          </div>
+
+          <GameHeader score={score} streak={streak} />
+
+          {/* Waste Item Stage */}
+          <div className="flex-1 flex flex-col items-center justify-center py-4">
+            <div className="relative group cursor-pointer select-none">
+              <div className="absolute inset-0 bg-blue-200 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+              <div className="relative text-9xl transform hover:scale-110 transition-transform duration-300 drop-shadow-xl filter">
+                {currentItem.emoji}
+              </div>
+            </div>
+            
+            <div className="mt-8 text-center space-y-2">
+              <span className="px-3 py-1 bg-slate-100 text-slate-500 text-xs font-bold rounded-full uppercase tracking-wider">
+                Sort This Item
+              </span>
+              <h2 className="text-3xl font-black text-slate-800 leading-tight">
+                {currentItem.name}
+              </h2>
+              <p className="text-xl font-medium text-slate-500">
+                {currentItem.thaiName}
+              </p>
+            </div>
+          </div>
+
+          {/* Control Pad */}
+          <div className="grid grid-cols-2 gap-3 mt-auto pt-6 shrink-0">
+            {BINS.map(bin => (
+              <BinCard 
+                key={bin.id} 
+                bin={bin} 
+                onClick={handleBinSelect}
+                disabled={showFeedback}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 bg-slate-50 text-center shrink-0">
+          <p className="text-[10px] text-slate-400">Based on Thailand Pollution Control Department Standards</p>
+        </div>
+
+        {/* Feedback Overlay */}
+        {showFeedback && correctBinForCurrent && (
+            <FeedbackModal 
+            isCorrect={lastResult?.correct}
+            correctBin={correctBinForCurrent}
+            item={currentItem}
+            onNext={nextQuestion}
+            />
+        )}
+
+      </div>
+    </div>
+  );
+}
