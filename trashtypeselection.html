@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="th">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waste Separation Game</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans Thai', 'Prompt', sans-serif;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+
+    .game-wrapper {
+      width: 100%;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .game-container {
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .game-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #1e293b;
+    }
+
+    .subtitle {
+      font-size: 1.125rem;
+      color: #64748b;
+    }
+
+    .score-board {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding: 1.25rem;
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .score-label {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .score-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .waste-item-card {
+      background: white;
+      padding: 2rem;
+      border-radius: 1.5rem;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .item-emoji {
+      font-size: 5rem;
+      margin-bottom: 1rem;
+    }
+
+    .item-name {
+      font-size: 1.875rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 1rem;
+    }
+
+    .instruction {
+      font-size: 1.125rem;
+      color: #64748b;
+      margin-bottom: 1.5rem;
+    }
+
+    .bins-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .bin-button {
+      padding: 1.5rem;
+      border: none;
+      border-radius: 1rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .bin-button:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .bin-button:active {
+      transform: translateY(-2px);
+    }
+
+    .bin-emoji {
+      font-size: 2.5rem;
+    }
+
+    .green-bin {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+
+    .yellow-bin {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: white;
+    }
+
+    .red-bin {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+    }
+
+    .blue-bin {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+    }
+
+    .feedback-card {
+      padding: 1.5rem;
+      border-radius: 1rem;
+      margin-bottom: 1.5rem;
+      display: none;
+      animation: slideIn 0.5s ease;
+    }
+
+    .feedback-card.show {
+      display: block;
+    }
+
+    .feedback-correct {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      border: 2px solid #10b981;
+    }
+
+    .feedback-incorrect {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      border: 2px solid #ef4444;
+    }
+
+    .feedback-emoji {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .feedback-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .feedback-correct .feedback-title {
+      color: #047857;
+    }
+
+    .feedback-incorrect .feedback-title {
+      color: #b91c1c;
+    }
+
+    .feedback-text {
+      font-size: 1.125rem;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+
+    .next-button {
+      width: 100%;
+      padding: 1.25rem;
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      color: white;
+      border: none;
+      border-radius: 1rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .next-button:hover {
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .next-button:active {
+      transform: translateY(0);
+    }
+
+    .victory-screen {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fbbf24 100%);
+      border-radius: 1.5rem;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+      animation: celebrate 0.6s ease;
+    }
+
+    .victory-screen.show {
+      display: block;
+    }
+
+    .victory-emoji {
+      font-size: 6rem;
+      margin-bottom: 1rem;
+      animation: bounce 1s infinite;
+    }
+
+    .victory-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 1rem;
+    }
+
+    .victory-message {
+      font-size: 1.25rem;
+      color: #78350f;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .final-score {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #b45309;
+      margin-bottom: 1.5rem;
+    }
+
+    .restart-button {
+      padding: 1.25rem 2rem;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      border-radius: 1rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .restart-button:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .game-content {
+      display: block;
+    }
+
+    .game-content.hidden {
+      display: none;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes celebrate {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-20px);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .game-title {
+        font-size: 2rem;
+      }
+
+      .bins-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <main class="game-wrapper">
+   <div class="game-container">
+    <header class="header">
+     <h1 class="game-title" id="gameTitle">🌍 เกมคัดแยกขะยะ</h1>
+     <p class="subtitle" id="subtitle">เรียนรู้การทิ้งขยะอย่างถูกต้อง</p>
+    </header>
+    <div class="score-board"><span class="score-label">คะแนน:</span> <span class="score-value" id="scoreValue">0</span> <span class="score-label">| ถูก:</span> <span class="score-value" id="correctCount">0</span> <span class="score-label">/5</span>
+    </div>
+    <div class="victory-screen" id="victoryScreen">
+     <div class="victory-emoji">
+      🏆
+     </div>
+     <h2 class="victory-title">ยินดีด้วย!</h2>
+     <p class="victory-message">คุณตอบถูก 5 ข้อแล้ว! 🎉<br>
+      คุณเป็นผู้เชี่ยวชาญด้านการคัดแยกขยะแล้ว! 🌟</p>
+     <div class="final-score" id="finalScore">
+      50 คะแนน
+     </div><button class="restart-button" id="restartButton">เริ่มเกมใหม่ 🔄</button>
+    </div>
+    <div class="game-content" id="gameContent">
+     <div class="waste-item-card">
+      <div class="item-emoji" id="itemEmoji">
+       🔋
+      </div>
+      <h2 class="item-name" id="itemName">กำลังโหลด...</h2>
+      <p class="instruction">เลือกถังขยะที่เหมาะสม</p>
+     </div>
+     <div class="bins-grid" id="binsGrid"><button class="bin-button green-bin" data-bin="green" aria-label="ถังเขียว - ขยะเปียก"> <span class="bin-emoji">🟢</span> <span>ถังเขียว</span> <span style="font-size: 0.875rem; opacity: 0.9;">ขยะเปียก/อินทรีย์</span> </button> <button class="bin-button yellow-bin" data-bin="yellow" aria-label="ถังเหลือง - ขยะรีไซเคิล"> <span class="bin-emoji">🟡</span> <span>ถังเหลือง</span> <span style="font-size: 0.875rem; opacity: 0.9;">ขยะรีไซเคิล</span> </button> <button class="bin-button red-bin" data-bin="red" aria-label="ถังแดง - ขยะอันตราย"> <span class="bin-emoji">🔴</span> <span>ถังแดง</span> <span style="font-size: 0.875rem; opacity: 0.9;">ขยะอันตราย</span> </button> <button class="bin-button blue-bin" data-bin="blue" aria-label="ถังน้ำเงิน - ขยะทั่วไป"> <span class="bin-emoji">🔵</span> <span>ถังน้ำเงิน</span> <span style="font-size: 0.875rem; opacity: 0.9;">ขยะทั่วไป</span> </button>
+     </div>
+     <div class="feedback-card" id="feedbackCard">
+      <div class="feedback-emoji" id="feedbackEmoji">
+       ✨
+      </div>
+      <div class="feedback-title" id="feedbackTitle">
+       ยอดเยี่ยม!
+      </div>
+      <div class="feedback-text" id="feedbackText">
+       คุณตอบถูกต้อง!
+      </div>
+     </div><button class="next-button" id="nextButton">ลองข้อถัดไป →</button>
+    </div>
+   </div>
+  </main>
+  <script>
+    const defaultConfig = {
+      game_title: "🌍 เกมคัดแยกขะยะ",
+      subtitle: "เรียนรู้การทิ้งขยะอย่างถูกต้อง",
+      next_button: "ลองข้อถัดไป →"
+    };
+
+    const wasteItems = [
+      { name: "แบตเตอรี่เก่า", emoji: "🔋", bin: "red", explanation: "แบตเตอรี่มีโลหะหนักที่เป็นอันตราย ต้องทิ้งในถังแดง" },
+      { name: "ขวดพลาสติก", emoji: "🍾", bin: "yellow", explanation: "พลาสติกสามารถนำกลับมาใช้ใหม่ได้ ทิ้งในถังเหลือง" },
+      { name: "ข้าวเหลือ", emoji: "🍚", bin: "green", explanation: "อาหารเหลือเป็นขยะเปียก สามารถย่อยสลายได้ ทิ้งในถังเขียว" },
+      { name: "กล่องโฟม", emoji: "📦", bin: "blue", explanation: "โฟมเป็นขยะทั่วไปที่ไม่���ามารถ��ีไซเคิลได้ ทิ้งในถังน้ำเงิน" },
+      { name: "หลอดไฟ", emoji: "💡", bin: "red", explanation: "หลอดไฟมีสารอันตราย เช่น ปรอท ต้องทิ้งในถังแดง" },
+      { name: "กระดาษหนังสือพิมพ์", emoji: "📰", bin: "yellow", explanation: "กระดาษสามารถรีไซเคิลได้ ทิ้งในถังเหลือง" },
+      { name: "เปลือกผลไม้", emoji: "🍌", bin: "green", explanation: "เปลือกผลไม้เป็นขยะอินทรีย์ ย่อยสลายได้ ทิ้งในถังเขียว" },
+      { name: "กระป๋องอลูมิเนียม", emoji: "🥫", bin: "yellow", explanation: "อลูมิเนียมนำกลับมาใช้ใ���ม่ได้ 100% ทิ้งในถังเหลือง" },
+      { name: "ถุงพลาสติก", emoji: "🛍️", bin: "blue", explanation: "ถุงพลาสติกส่วนใหญ่เป็นขยะทั่วไป ทิ้งในถังน้ำเงิน" },
+      { name: "ขวดแก้ว", emoji: "🍷", bin: "yellow", explanation: "แก้วรีไซเคิลได้ง่าย ประหยัดพลังงาน ทิ้งในถังเหลือง" },
+      { name: "ใบไม้แห้ง", emoji: "🍂", bin: "green", explanation: "ใบไม้เป็นขยะอินทรีย์ นำไปทำปุ๋ยได้ ทิ้งในถังเขียว" },
+      { name: "ยาหมดอายุ", emoji: "💊", bin: "red", explanation: "ยาหมดอายุมีสารเคมีอันตราย ต้องทิ้งในถังแ���ง" },
+      { name: "กล่องนม", emoji: "🥛", bin: "yellow", explanation: "กล่องนมรีไซเคิลได้ แยกชิ้นส่วนก่อนทิ้งในถังเหลือง" },
+      { name: "ถ่านไฟฉาย", emoji: "🔦", bin: "red", explanation: "ถ่านมีสารเคมีอันตราย ต้องทิ้งแยกในถังแดง" },
+      { name: "กระดาษทิชชู่ใช้แล้ว", emoji: "🧻", bin: "green", explanation: "ทิชชู่ใช้แล้วเป็นขยะเปียก ย่อยสลายได้ ทิ้งในถังเขียว" }
+    ];
+
+    let currentItem = null;
+    let score = 0;
+    let correctAnswers = 0;
+    let hasAnswered = false;
+
+    function loadNewItem() {
+      if (correctAnswers >= 5) {
+        showVictoryScreen();
+        return;
+      }
+
+      currentItem = wasteItems[Math.floor(Math.random() * wasteItems.length)];
+      document.getElementById('itemEmoji').textContent = currentItem.emoji;
+      document.getElementById('itemName').textContent = currentItem.name;
+      document.getElementById('feedbackCard').classList.remove('show');
+      hasAnswered = false;
+      
+      const buttons = document.querySelectorAll('.bin-button');
+      buttons.forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      });
+    }
+
+    function showVictoryScreen() {
+      document.getElementById('gameContent').classList.add('hidden');
+      document.getElementById('victoryScreen').classList.add('show');
+      document.getElementById('finalScore').textContent = `${score} คะแนน`;
+    }
+
+    function restartGame() {
+      score = 0;
+      correctAnswers = 0;
+      document.getElementById('scoreValue').textContent = score;
+      document.getElementById('correctCount').textContent = correctAnswers;
+      document.getElementById('victoryScreen').classList.remove('show');
+      document.getElementById('gameContent').classList.remove('hidden');
+      loadNewItem();
+    }
+
+    function checkAnswer(selectedBin) {
+      if (hasAnswered) return;
+      hasAnswered = true;
+
+      const feedbackCard = document.getElementById('feedbackCard');
+      const feedbackEmoji = document.getElementById('feedbackEmoji');
+      const feedbackTitle = document.getElementById('feedbackTitle');
+      const feedbackText = document.getElementById('feedbackText');
+
+      const buttons = document.querySelectorAll('.bin-button');
+      buttons.forEach(btn => btn.disabled = true);
+
+      if (selectedBin === currentItem.bin) {
+        score += 10;
+        correctAnswers += 1;
+        document.getElementById('scoreValue').textContent = score;
+        document.getElementById('correctCount').textContent = correctAnswers;
+        
+        feedbackCard.className = 'feedback-card feedback-correct show';
+        feedbackEmoji.textContent = '🎉';
+        feedbackTitle.textContent = 'ยอดเยี่ยม!';
+        feedbackText.textContent = `ถูกต้อง! +10 คะแนน 🌟 ${currentItem.explanation}`;
+      } else {
+        feedbackCard.className = 'feedback-card feedback-incorrect show';
+        feedbackEmoji.textContent = '💭';
+        feedbackTitle.textContent = 'ลองใหม่อีกครั้ง';
+        
+        const binNames = {
+          green: 'ถังเขียว 🟢',
+          yellow: 'ถังเหลือง 🟡',
+          red: 'ถังแดง 🔴',
+          blue: 'ถังน้ำเงิน 🔵'
+        };
+        
+        feedbackText.textContent = `คำตอบที่ถูกต้องคือ ${binNames[currentItem.bin]} - ${currentItem.explanation}`;
+      }
+    }
+
+    async function onConfigChange(config) {
+      document.getElementById('gameTitle').textContent = config.game_title || defaultConfig.game_title;
+      document.getElementById('subtitle').textContent = config.subtitle || defaultConfig.subtitle;
+      document.getElementById('nextButton').textContent = config.next_button || defaultConfig.next_button;
+    }
+
+    document.getElementById('binsGrid').addEventListener('click', (e) => {
+      const button = e.target.closest('.bin-button');
+      if (button && !hasAnswered) {
+        checkAnswer(button.dataset.bin);
+      }
+    });
+
+    document.getElementById('nextButton').addEventListener('click', loadNewItem);
+    document.getElementById('restartButton').addEventListener('click', restartGame);
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["game_title", config.game_title || defaultConfig.game_title],
+          ["subtitle", config.subtitle || defaultConfig.subtitle],
+          ["next_button", config.next_button || defaultConfig.next_button]
+        ])
+      });
+    }
+
+    loadNewItem();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a57cfcc54040884',t:'MTc2NDMxMTM3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
