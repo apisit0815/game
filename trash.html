@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Trash2, AlertTriangle, Leaf, Trophy, Star, ArrowRight, Info } from 'lucide-react';
+import { RefreshCw, Trash2, AlertTriangle, Leaf, Trophy, ArrowRight, Info } from 'lucide-react';
 
 // --- Configuration & Data ---
 
@@ -80,7 +80,7 @@ const WASTE_ITEMS = [
 // --- Components ---
 
 const GameHeader = ({ score, streak }) => (
-  <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm mb-6">
+  <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm mb-6 border border-slate-100">
     <div className="flex items-center gap-2">
       <div className="bg-yellow-100 p-2 rounded-full">
         <Trophy className="text-yellow-600 w-5 h-5" />
@@ -108,10 +108,10 @@ const BinCard = ({ bin, onClick, disabled }) => (
     className={`
       ${bin.color} ${bin.borderColor}
       border-b-4 active:border-b-0 active:translate-y-1
-      w-full p-4 rounded-xl shadow-lg transition-all duration-200
+      w-full p-4 rounded-xl shadow-lg transition-transform duration-100
       flex flex-col items-center justify-center gap-2
       group relative overflow-hidden
-      disabled:opacity-50 disabled:cursor-not-allowed
+      disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
     `}
   >
     <div className="bg-white/20 p-3 rounded-full text-white backdrop-blur-sm group-hover:scale-110 transition-transform">
@@ -126,12 +126,16 @@ const BinCard = ({ bin, onClick, disabled }) => (
 
 const FeedbackModal = ({ isCorrect, correctBin, item, onNext }) => {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => {}} />
+      
+      {/* Modal Card */}
+      <div className="relative bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-bounce-short">
         
         {/* Header Color based on result */}
         <div className={`p-6 text-center ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
-          <div className="text-6xl mb-4 animate-bounce">
+          <div className="text-6xl mb-4 transform hover:scale-110 transition-transform cursor-default">
             {isCorrect ? '🎉' : '🤔'}
           </div>
           <h2 className={`text-2xl font-black ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
@@ -145,12 +149,11 @@ const FeedbackModal = ({ isCorrect, correctBin, item, onNext }) => {
             <div className="bg-gray-50 p-4 rounded-xl border-l-4 border-gray-400">
               <p className="text-gray-500 text-sm font-bold uppercase mb-1">Correct Bin:</p>
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-full ${correctBin.color} flex items-center justify-center text-white`}>
+                <div className={`w-8 h-8 rounded-full ${correctBin.color} flex items-center justify-center text-white shrink-0`}>
                   {correctBin.icon}
                 </div>
                 <div>
-                  <span className={`font-bold ${correctBin.textColor}`}>{correctBin.name}</span>
-                  <span className="text-gray-400 text-sm mx-1">•</span>
+                  <span className={`font-bold ${correctBin.textColor} block`}>{correctBin.name}</span>
                   <span className="text-gray-500 text-sm">{correctBin.thaiName}</span>
                 </div>
               </div>
@@ -158,19 +161,17 @@ const FeedbackModal = ({ isCorrect, correctBin, item, onNext }) => {
           )}
 
           <div className="bg-blue-50 p-4 rounded-xl">
-             <div className="flex gap-2 items-start">
+             <div className="flex gap-3 items-start">
                <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-               <div>
-                 <p className="text-blue-900 font-medium text-sm leading-relaxed">
-                   {item.explanation}
-                 </p>
-               </div>
+               <p className="text-blue-900 font-medium text-sm leading-relaxed">
+                 {item.explanation}
+               </p>
              </div>
           </div>
 
           <button
             onClick={onNext}
-            className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-colors"
+            className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-colors active:scale-95 transform"
           >
             Next Item <ArrowRight className="w-5 h-5" />
           </button>
@@ -185,23 +186,23 @@ export default function WasteSortHero() {
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [lastResult, setLastResult] = useState(null); // { correct: boolean }
-  
-  // Shuffle items on mount
+  const [lastResult, setLastResult] = useState(null);
   const [gameItems, setGameItems] = useState([]);
 
+  // Initialize Game
   useEffect(() => {
-    // Simple shuffle of the WASTE_ITEMS array
     const shuffled = [...WASTE_ITEMS].sort(() => Math.random() - 0.5);
     setGameItems(shuffled);
   }, []);
 
   const handleBinSelect = (selectedBinId) => {
     const currentItem = gameItems[currentQuestionIndex];
+    if (!currentItem) return;
+
     const isCorrect = currentItem.binId === selectedBinId;
 
     if (isCorrect) {
-      setScore(s => s + 10 + (streak * 2)); // Bonus for streaks
+      setScore(s => s + 10 + (streak * 2));
       setStreak(s => s + 1);
       setLastResult({ correct: true });
     } else {
@@ -214,29 +215,42 @@ export default function WasteSortHero() {
 
   const nextQuestion = () => {
     setShowFeedback(false);
-    setLastResult(null);
     
-    // If we reached the end, reshuffle and restart index
-    if (currentQuestionIndex >= gameItems.length - 1) {
-      const shuffled = [...WASTE_ITEMS].sort(() => Math.random() - 0.5);
-      setGameItems(shuffled);
-      setCurrentQuestionIndex(0);
-    } else {
-      setCurrentQuestionIndex(prev => prev + 1);
-    }
+    // Small delay to allow modal to close before switching content
+    setTimeout(() => {
+        setLastResult(null);
+        if (currentQuestionIndex >= gameItems.length - 1) {
+            // Reshuffle if end of list
+            const shuffled = [...WASTE_ITEMS].sort(() => Math.random() - 0.5);
+            setGameItems(shuffled);
+            setCurrentQuestionIndex(0);
+        } else {
+            setCurrentQuestionIndex(prev => prev + 1);
+        }
+    }, 100);
   };
 
-  if (gameItems.length === 0) return <div className="p-10 text-center">Loading Waste Data...</div>;
+  if (gameItems.length === 0) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">
+            Loading Waste Data...
+        </div>
+    );
+  }
 
   const currentItem = gameItems[currentQuestionIndex];
+  
+  // Safety check
+  if (!currentItem) return <div className="p-8 text-center">Preparing next item...</div>;
+
   const correctBinForCurrent = BINS.find(b => b.id === currentItem.binId);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100">
-      <div className="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-2xl overflow-hidden relative">
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 flex items-center justify-center p-0 md:p-4">
+      <div className="w-full max-w-md bg-white md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col min-h-[100dvh] md:min-h-[800px]">
         
         {/* Top Bar Decoration */}
-        <div className="h-2 flex w-full">
+        <div className="h-2 flex w-full shrink-0">
           <div className="h-full w-1/4 bg-green-500"></div>
           <div className="h-full w-1/4 bg-yellow-400"></div>
           <div className="h-full w-1/4 bg-red-500"></div>
@@ -246,7 +260,7 @@ export default function WasteSortHero() {
         {/* Main Content Area */}
         <div className="flex-1 p-6 flex flex-col">
           
-          <div className="mb-2">
+          <div className="mb-2 shrink-0">
              <h1 className="text-2xl font-black text-slate-800 text-center">Waste Sort Hero</h1>
              <p className="text-center text-slate-400 text-xs font-medium uppercase tracking-widest">Thai Standards Edition</p>
           </div>
@@ -254,8 +268,8 @@ export default function WasteSortHero() {
           <GameHeader score={score} streak={streak} />
 
           {/* Waste Item Stage */}
-          <div className="flex-1 flex flex-col items-center justify-center py-8">
-            <div className="relative group cursor-pointer" onClick={() => {/* Just a fun interaction later */}}>
+          <div className="flex-1 flex flex-col items-center justify-center py-4">
+            <div className="relative group cursor-pointer select-none">
               <div className="absolute inset-0 bg-blue-200 rounded-full blur-3xl opacity-20 animate-pulse"></div>
               <div className="relative text-9xl transform hover:scale-110 transition-transform duration-300 drop-shadow-xl filter">
                 {currentItem.emoji}
@@ -276,7 +290,7 @@ export default function WasteSortHero() {
           </div>
 
           {/* Control Pad */}
-          <div className="grid grid-cols-2 gap-4 mt-auto pt-6">
+          <div className="grid grid-cols-2 gap-3 mt-auto pt-6 shrink-0">
             {BINS.map(bin => (
               <BinCard 
                 key={bin.id} 
@@ -288,22 +302,22 @@ export default function WasteSortHero() {
           </div>
         </div>
 
-        {/* Footer/Legal */}
-        <div className="p-4 bg-slate-50 text-center">
-          <p className="text-xs text-slate-400">Based on Thailand Pollution Control Department Standards</p>
+        {/* Footer */}
+        <div className="p-4 bg-slate-50 text-center shrink-0">
+          <p className="text-[10px] text-slate-400">Based on Thailand Pollution Control Department Standards</p>
         </div>
 
-      </div>
+        {/* Feedback Overlay */}
+        {showFeedback && correctBinForCurrent && (
+            <FeedbackModal 
+            isCorrect={lastResult?.correct}
+            correctBin={correctBinForCurrent}
+            item={currentItem}
+            onNext={nextQuestion}
+            />
+        )}
 
-      {/* Feedback Overlay */}
-      {showFeedback && (
-        <FeedbackModal 
-          isCorrect={lastResult?.correct}
-          correctBin={correctBinForCurrent}
-          item={currentItem}
-          onNext={nextQuestion}
-        />
-      )}
+      </div>
     </div>
   );
 }
