@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>พลเมืองดี วิถีไทย (Civic Duty Quest)</title>
+    <!-- Import Google Fonts: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Import Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom Config for Brand Colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                    colors: {
+                        civic: {
+                            blue: '#1E40AF', // Royal Blue
+                            light: '#EFF6FF', // Light Blue Background
+                            yellow: '#FACC15', // Gold/Yellow
+                            accent: '#3B82F6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Animations */
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .slide-up {
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .btn-hover {
+            transition: all 0.2s ease;
+        }
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Stat Bar Transition */
+        .stat-bar-fill {
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Game Container -->
+    <div id="app" class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden relative min-h-[600px] flex flex-col">
+        
+        <!-- Header / HUD (Always visible during game) -->
+        <header id="hud" class="hidden bg-civic-blue text-white p-4 shadow-md z-10">
+            <div class="flex justify-between items-center mb-2">
+                <h1 class="text-lg font-bold">📢 พลเมืองดี วิถีไทย</h1>
+                <span class="text-xs bg-white/20 px-2 py-1 rounded-full">ข้อที่ <span id="q-current">1</span>/5</span>
+            </div>
+            
+            <!-- Stats Grid -->
+            <div class="space-y-3">
+                <!-- Law Stat -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span>⚖️ ความรู้กฎหมาย</span>
+                        <span id="val-law">50%</span>
+                    </div>
+                    <div class="w-full bg-blue-900/30 rounded-full h-2.5">
+                        <div id="bar-law" class="stat-bar-fill bg-blue-400 h-2.5 rounded-full" style="width: 50%"></div>
+                    </div>
+                </div>
+                <!-- Public Spirit Stat -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span>❤️ จิตสาธารณะ</span>
+                        <span id="val-public">50%</span>
+                    </div>
+                    <div class="w-full bg-blue-900/30 rounded-full h-2.5">
+                        <div id="bar-public" class="stat-bar-fill bg-green-400 h-2.5 rounded-full" style="width: 50%"></div>
+                    </div>
+                </div>
+                <!-- Happiness Stat -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span>😊 ความสุข</span>
+                        <span id="val-happy">50%</span>
+                    </div>
+                    <div class="w-full bg-blue-900/30 rounded-full h-2.5">
+                        <div id="bar-happy" class="stat-bar-fill bg-yellow-400 h-2.5 rounded-full" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <main class="flex-grow relative flex flex-col">
+            
+            <!-- 1. Start Screen -->
+            <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-b from-blue-50 to-white fade-in z-20">
+                <div class="text-6xl mb-4">🇹🇭</div>
+                <h1 class="text-3xl font-bold text-civic-blue mb-2">พลเมืองดี<br><span class="text-civic-yellow text-4xl stroke-text">วิถีไทย</span></h1>
+                <p class="text-gray-500 mb-8 mt-2">เกมจำลองสถานการณ์วัดใจ<br>คุณจะเป็นพลเมืองแบบไหนในสังคมไทย?</p>
+                
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-left mb-8 w-full shadow-inner">
+                    <p class="font-semibold mb-2 text-civic-blue">ภารกิจของคุณ:</p>
+                    <ul class="space-y-1 text-gray-600">
+                        <li>⚖️ รักษากฎหมายบ้านเมือง</li>
+                        <li>❤️ มีน้ำใจต่อเพื่อนมนุษย์</li>
+                        <li>😊 แต่ต้องรักษาความสุขตัวเองด้วย!</li>
+                    </ul>
+                </div>
+
+                <button onclick="game.start()" class="w-full bg-civic-blue hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg btn-hover text-lg">
+                    เริ่มเกมเลย! 🚀
+                </button>
+            </div>
+
+            <!-- 2. Gameplay Screen -->
+            <div id="game-screen" class="hidden flex-col flex-grow p-6 fade-in pb-20 overflow-y-auto">
+                <!-- Scenario Image/Icon -->
+                <div class="flex justify-center mb-6 mt-2">
+                    <div id="scenario-emoji" class="text-8xl drop-shadow-md animate-bounce-slow">🚦</div>
+                </div>
+
+                <!-- Question Card -->
+                <div class="bg-white rounded-xl mb-6">
+                    <h2 id="scenario-title" class="text-xl font-bold text-gray-800 mb-2">แยกไฟแดงวัดใจ</h2>
+                    <p id="scenario-desc" class="text-gray-600 leading-relaxed">
+                        คุณกำลังรีบไปโรงเรียนมาก สายแล้วด้วย แต่พอขับรถมาถึงสี่แยก ไฟจราจรเปลี่ยนเป็น "สีเหลือง" พอดี...
+                    </p>
+                </div>
+
+                <!-- Choices -->
+                <div id="choices-container" class="space-y-3 mt-auto">
+                    <!-- Buttons will be injected here via JS -->
+                </div>
+            </div>
+
+            <!-- 3. Feedback Overlay (Modal) -->
+            <div id="feedback-overlay" class="hidden absolute inset-0 bg-black/80 z-30 flex items-center justify-center p-6 backdrop-blur-sm">
+                <div class="bg-white w-full rounded-2xl p-6 text-center shadow-2xl slide-up border-t-4 border-civic-yellow">
+                    <div id="feedback-icon" class="text-5xl mb-3">✅</div>
+                    <h3 id="feedback-title" class="text-xl font-bold text-gray-800 mb-2">ตัดสินใจได้ดี!</h3>
+                    <p id="feedback-desc" class="text-gray-600 mb-4 text-sm">การเคารพกฎจราจรช่วยลดอุบัติเหตุ แม้จะสายหน่อยแต่ปลอดภัยชัวร์</p>
+                    
+                    <!-- Stat Changes Summary -->
+                    <div class="bg-gray-100 rounded-lg p-3 mb-6 text-sm grid grid-cols-3 gap-2">
+                        <div class="flex flex-col">
+                            <span class="text-xs text-gray-500">กฎหมาย</span>
+                            <span id="change-law" class="font-bold text-green-600">+10</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs text-gray-500">จิตสาธารณะ</span>
+                            <span id="change-public" class="font-bold text-green-600">+5</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs text-gray-500">ความสุข</span>
+                            <span id="change-happy" class="font-bold text-red-500">-5</span>
+                        </div>
+                    </div>
+
+                    <button onclick="game.next()" class="w-full bg-civic-yellow hover:bg-yellow-500 text-blue-900 font-bold py-3 px-6 rounded-xl shadow-md btn-hover">
+                        ไปข้อต่อไป ➡️
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4. End Screen -->
+            <div id="end-screen" class="hidden absolute inset-0 bg-white z-20 flex flex-col items-center p-6 overflow-y-auto">
+                <div class="text-center mt-8 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">สรุปผลการประเมิน</h2>
+                    <p class="text-gray-500 text-sm">คุณเป็นพลเมืองแบบไหนกันนะ?</p>
+                </div>
+
+                <!-- Rank Card -->
+                <div class="w-full bg-gradient-to-br from-civic-blue to-blue-800 text-white rounded-2xl p-6 text-center shadow-lg mb-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full"></div>
+                    
+                    <div id="final-emoji" class="text-6xl mb-2 relative z-10">🏆</div>
+                    <div class="text-sm opacity-80 mb-1">ระดับความเป็นพลเมือง</div>
+                    <h1 id="final-rank" class="text-3xl font-bold text-civic-yellow mb-2">พลเมืองดีเด่น</h1>
+                    <p id="final-comment" class="text-sm font-light opacity-90">คุณเป็นตัวอย่างที่ดีให้กับสังคม รักษาความดีไว้นะ!</p>
+                </div>
+
+                <!-- Final Stats -->
+                <div class="w-full space-y-4 mb-8">
+                    <div class="flex items-center">
+                        <span class="w-8 text-xl">⚖️</span>
+                        <div class="flex-1 ml-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1"><span>กฎหมาย</span><span id="end-law">80%</span></div>
+                            <div class="h-2 w-full bg-gray-200 rounded-full"><div id="end-bar-law" class="h-2 bg-blue-500 rounded-full" style="width: 80%"></div></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-8 text-xl">❤️</span>
+                        <div class="flex-1 ml-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1"><span>จิตสาธารณะ</span><span id="end-public">65%</span></div>
+                            <div class="h-2 w-full bg-gray-200 rounded-full"><div id="end-bar-public" class="h-2 bg-green-500 rounded-full" style="width: 65%"></div></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-8 text-xl">😊</span>
+                        <div class="flex-1 ml-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1"><span>ความสุข</span><span id="end-happy">40%</span></div>
+                            <div class="h-2 w-full bg-gray-200 rounded-full"><div id="end-bar-happy" class="h-2 bg-yellow-500 rounded-full" style="width: 40%"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="game.restart()" class="w-full bg-gray-800 hover:bg-black text-white font-bold py-4 px-8 rounded-xl shadow-lg btn-hover mt-auto mb-4">
+                    🔄 เล่นอีกครั้ง
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Game Logic -->
+    <script>
+        // Data: 5 Scenarios
+        const scenarios = [
+            {
+                id: 1,
+                title: "🚦 แยกไฟแดงวัดใจ",
+                desc: "คุณกำลังขับมอเตอร์ไซค์รีบไปโรงเรียนเพราะสายแล้ว แต่เมื่อถึงสี่แยก ไฟสัญญาณเปลี่ยนจากเขียวเป็น 'เหลือง' พอดี...",
+                emoji: "🛵",
+                choices: [
+                    {
+                        text: "เบรกทันที หยุดรอหลังเส้น",
+                        feedback: {
+                            title: "ปลอดภัยไว้ก่อน!",
+                            desc: "เยี่ยมมาก! แม้จะสายแต่คุณเคารพกฎจราจรและไม่เสี่ยงเกิดอุบัติเหตุ",
+                            icon: "👍"
+                        },
+                        effects: { law: 15, public: 5, happy: -10 } // เสียความสุขเพราะไปสาย
+                    },
+                    {
+                        text: "บิดหมดปลอก ฝ่าไปเลย!",
+                        feedback: {
+                            title: "หวาดเสียว!",
+                            desc: "คุณฝ่าฝืนกฎจราจรและเสี่ยงต่อชีวิตผู้อื่น แม้จะเร็วทันใจแต่ไม่ถูกต้องนะ",
+                            icon: "😱"
+                        },
+                        effects: { law: -20, public: -10, happy: 10 } // มีความสุขเพราะทันเวลา
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: "🗑️ แก้วน้ำเจ้าปัญหา",
+                desc: "คุณดื่มชานมไข่มุกหมดแล้ว กำลังจะทิ้งแก้ว แต่ถังขยะแยกประเภทตรงหน้าเต็มจนล้น...",
+                emoji: "🥤",
+                choices: [
+                    {
+                        text: "วางแปะไว้ข้างบนถังนั่นแหละ",
+                        feedback: {
+                            title: "มักง่ายไปหน่อยนะ",
+                            desc: "การวางทิ้งไว้แบบนั้นทำให้ขยะหกเลอะเทอะ และเป็นภาระคนเก็บกวาด",
+                            icon: "🧹"
+                        },
+                        effects: { law: -5, public: -20, happy: 5 } // สบายตัว
+                    },
+                    {
+                        text: "ถือไปทิ้งถังอื่นที่ว่าง",
+                        feedback: {
+                            title: "สุดยอดจิตสำนึก!",
+                            desc: "คุณยอมลำบากถือขยะเดินต่อเพื่อความสะอาดของส่วนรวม",
+                            icon: "✨"
+                        },
+                        effects: { law: 5, public: 15, happy: -5 } // หนักมือหน่อย
+                    }
+                ]
+            },
+            {
+                id: 3,
+                title: "🏧 คิว ATM ยาวเหยียด",
+                desc: "คุณต่อคิวกดเงินอยู่ แต่ป้าข้างหน้าทำรายการช้ามาก ดูเหมือนจะกดผิดๆ ถูกๆ หลายรอบ...",
+                emoji: "🏧",
+                choices: [
+                    {
+                        text: "บ่นเสียงดัง กดดันให้ป้ารีบ",
+                        feedback: {
+                            title: "ใจร้อนเกินไป",
+                            desc: "การแสดงกิริยาไม่พอใจทำให้บรรยากาศแย่ และเป็นการไม่เคารพผู้อื่น",
+                            icon: "😤"
+                        },
+                        effects: { law: 0, public: -15, happy: 5 } // ระบายอารมณ์
+                    },
+                    {
+                        text: "รออย่างใจเย็น หรือเข้าไปถามช่วย",
+                        feedback: {
+                            title: "น้ำใจงาม",
+                            desc: "การมีความอดทนและเอื้อเฟื้อต่อผู้สูงอายุคือวิถีไทยที่น่าชื่นชม",
+                            icon: "😊"
+                        },
+                        effects: { law: 0, public: 15, happy: -5 } // เสียเวลา
+                    }
+                ]
+            },
+            {
+                id: 4,
+                title: "📱 โพสต์หลุดเพื่อนร่วมห้อง",
+                desc: "ในกรุ๊ปแชทมีคนส่งรูปหลุดตลกๆ ของเพื่อนที่คุณไม่ค่อยชอบหน้าเท่าไหร่...",
+                emoji: "📱",
+                choices: [
+                    {
+                        text: "ส่งต่อให้เพื่อนกลุ่มอื่นดูขำๆ",
+                        feedback: {
+                            title: "ผิด พ.ร.บ. คอมฯ!",
+                            desc: "การส่งต่อข้อมูลที่ทำให้ผู้อื่นเสียหายมีความผิดทางกฎหมายและขาดจริยธรรม",
+                            icon: "🚫"
+                        },
+                        effects: { law: -25, public: -20, happy: 10 } // สนุกปาก
+                    },
+                    {
+                        text: "เตือนเพื่อนว่าอย่าส่งต่อ และไม่ยุ่งเกี่ยว",
+                        feedback: {
+                            title: "Cyber Hero!",
+                            desc: "คุณช่วยหยุดวงจรการ Cyberbullying และปกป้องสิทธิของผู้อื่น",
+                            icon: "🛡️"
+                        },
+                        effects: { law: 10, public: 20, happy: -5 } // อาจโดนเพื่อนแซวว่าโลกสวย
+                    }
+                ]
+            },
+            {
+                id: 5,
+                title: "🗳️ ฤดูกาลเลือกตั้ง",
+                desc: "มีหัวคะแนนของพรรคหนึ่ง มาเคาะประตูบ้านพร้อมยื่นเงิน 500 บาท บอกให้เลือกเบอร์นี้...",
+                emoji: "💰",
+                choices: [
+                    {
+                        text: "รับเงินไว้ (เงินมากาไม่กาอีกเรื่อง)",
+                        feedback: {
+                            title: "อย่าหาทำ!",
+                            desc: "การรับเงินซื้อเสียงถือเป็นการทุจริตเลือกตั้ง เป็นจุดเริ่มต้นของวงจรอุบาทว์",
+                            icon: "💸"
+                        },
+                        effects: { law: -30, public: -25, happy: 20 } // ได้เงินฟรี
+                    },
+                    {
+                        text: "ปฏิเสธทันที และแจ้งเบาะแส",
+                        feedback: {
+                            title: "พลเมืองประชาธิปไตย",
+                            desc: "คุณยืนหยัดในความถูกต้อง การเลือกตั้งที่บริสุทธิ์เริ่มที่ตัวเรา",
+                            icon: "🗳️"
+                        },
+                        effects: { law: 20, public: 20, happy: 0 } // ไม่ได้ไม่เสีย
+                    }
+                ]
+            }
+        ];
+
+        // Game State Engine
+        const game = {
+            currentIdx: 0,
+            stats: {
+                law: 50,
+                public: 50,
+                happy: 50
+            },
+            
+            elements: {
+                startScreen: document.getElementById('start-screen'),
+                gameScreen: document.getElementById('game-screen'),
+                endScreen: document.getElementById('end-screen'),
+                hud: document.getElementById('hud'),
+                feedbackOverlay: document.getElementById('feedback-overlay'),
+                // Stats UI
+                valLaw: document.getElementById('val-law'),
+                valPublic: document.getElementById('val-public'),
+                valHappy: document.getElementById('val-happy'),
+                barLaw: document.getElementById('bar-law'),
+                barPublic: document.getElementById('bar-public'),
+                barHappy: document.getElementById('bar-happy'),
+                // Scenario UI
+                qCurrent: document.getElementById('q-current'),
+                sEmoji: document.getElementById('scenario-emoji'),
+                sTitle: document.getElementById('scenario-title'),
+                sDesc: document.getElementById('scenario-desc'),
+                choicesContainer: document.getElementById('choices-container'),
+                // Feedback UI
+                fTitle: document.getElementById('feedback-title'),
+                fDesc: document.getElementById('feedback-desc'),
+                fIcon: document.getElementById('feedback-icon'),
+                cLaw: document.getElementById('change-law'),
+                cPublic: document.getElementById('change-public'),
+                cHappy: document.getElementById('change-happy'),
+                // End UI
+                eRank: document.getElementById('final-rank'),
+                eComment: document.getElementById('final-comment'),
+                eEmoji: document.getElementById('final-emoji'),
+                eLaw: document.getElementById('end-law'),
+                ePublic: document.getElementById('end-public'),
+                eHappy: document.getElementById('end-happy'),
+                ebLaw: document.getElementById('end-bar-law'),
+                ebPublic: document.getElementById('end-bar-public'),
+                ebHappy: document.getElementById('end-bar-happy'),
+            },
+
+            start() {
+                this.resetStats();
+                this.currentIdx = 0;
+                this.elements.startScreen.classList.add('hidden');
+                this.elements.endScreen.classList.add('hidden');
+                this.elements.hud.classList.remove('hidden');
+                this.elements.gameScreen.classList.remove('hidden');
+                this.elements.gameScreen.classList.add('flex');
+                this.updateStatsUI();
+                this.renderScenario();
+            },
+
+            resetStats() {
+                this.stats = { law: 50, public: 50, happy: 50 };
+            },
+
+            updateStatsUI() {
+                const updateBar = (idVal, idBar, value) => {
+                    idVal.innerText = `${value}%`;
+                    idBar.style.width = `${value}%`;
+                    // Color Logic
+                    idBar.className = `stat-bar-fill h-2.5 rounded-full ${
+                        value < 30 ? 'bg-red-500' : 
+                        value < 60 ? 'bg-yellow-400' : 'bg-green-500'
+                    }`;
+                };
+
+                updateBar(this.elements.valLaw, this.elements.barLaw, this.stats.law);
+                updateBar(this.elements.valPublic, this.elements.barPublic, this.stats.public);
+                updateBar(this.elements.valHappy, this.elements.barHappy, this.stats.happy);
+            },
+
+            renderScenario() {
+                const current = scenarios[this.currentIdx];
+                this.elements.qCurrent.innerText = this.currentIdx + 1;
+                this.elements.sEmoji.innerText = current.emoji;
+                this.elements.sTitle.innerText = current.title;
+                this.elements.sDesc.innerText = current.desc;
+
+                // Generate Choices
+                this.elements.choicesContainer.innerHTML = '';
+                current.choices.forEach((choice, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left bg-white border border-gray-200 hover:border-civic-blue hover:bg-blue-50 p-4 rounded-xl shadow-sm transition-all duration-200 group";
+                    btn.onclick = () => this.handleChoice(choice);
+                    
+                    const innerHTML = `
+                        <div class="flex items-center">
+                            <span class="bg-gray-100 text-gray-600 font-bold w-8 h-8 flex items-center justify-center rounded-full mr-3 group-hover:bg-civic-blue group-hover:text-white transition-colors">
+                                ${String.fromCharCode(65 + index)}
+                            </span>
+                            <span class="font-medium text-gray-700 group-hover:text-civic-blue">${choice.text}</span>
+                        </div>
+                    `;
+                    btn.innerHTML = innerHTML;
+                    this.elements.choicesContainer.appendChild(btn);
+                });
+                
+                // Reset scroll
+                this.elements.gameScreen.scrollTop = 0;
+            },
+
+            handleChoice(choice) {
+                // Apply Stats
+                this.stats.law = this.clamp(this.stats.law + choice.effects.law);
+                this.stats.public = this.clamp(this.stats.public + choice.effects.public);
+                this.stats.happy = this.clamp(this.stats.happy + choice.effects.happy);
+                
+                this.updateStatsUI();
+
+                // Show Feedback
+                this.elements.fTitle.innerText = choice.feedback.title;
+                this.elements.fDesc.innerText = choice.feedback.desc;
+                this.elements.fIcon.innerText = choice.feedback.icon;
+
+                const formatChange = (val) => val > 0 ? `+${val}` : `${val}`;
+                const formatColor = (val) => val > 0 ? 'text-green-600' : (val < 0 ? 'text-red-500' : 'text-gray-500');
+
+                this.elements.cLaw.innerText = formatChange(choice.effects.law);
+                this.elements.cLaw.className = `font-bold ${formatColor(choice.effects.law)}`;
+
+                this.elements.cPublic.innerText = formatChange(choice.effects.public);
+                this.elements.cPublic.className = `font-bold ${formatColor(choice.effects.public)}`;
+
+                this.elements.cHappy.innerText = formatChange(choice.effects.happy);
+                this.elements.cHappy.className = `font-bold ${formatColor(choice.effects.happy)}`;
+
+                this.elements.feedbackOverlay.classList.remove('hidden');
+            },
+
+            next() {
+                this.elements.feedbackOverlay.classList.add('hidden');
+                this.currentIdx++;
+                
+                if (this.currentIdx < scenarios.length) {
+                    this.renderScenario();
+                } else {
+                    this.endGame();
+                }
+            },
+
+            endGame() {
+                this.elements.gameScreen.classList.add('hidden');
+                this.elements.hud.classList.add('hidden');
+                this.elements.endScreen.classList.remove('hidden');
+
+                // Fill Stats in End Screen
+                this.elements.eLaw.innerText = this.stats.law + "%";
+                this.elements.ebLaw.style.width = this.stats.law + "%";
+                this.elements.ePublic.innerText = this.stats.public + "%";
+                this.elements.ebPublic.style.width = this.stats.public + "%";
+                this.elements.eHappy.innerText = this.stats.happy + "%";
+                this.elements.ebHappy.style.width = this.stats.happy + "%";
+
+                // Calculate Rank
+                const avg = (this.stats.law + this.stats.public + this.stats.happy) / 3;
+                let rankData = {};
+
+                if (avg >= 80) {
+                    rankData = { title: "พลเมืองระดับเพชร 💎", desc: "สุดยอด! คุณคือต้นแบบที่สังคมต้องการ สมดุลทั้งปัญญาและคุณธรรม", emoji: "👑" };
+                } else if (avg >= 60) {
+                    rankData = { title: "พลเมืองดีเด่น 🥇", desc: "ทำได้ดีมาก! คุณมีความรับผิดชอบและจิตใจดีเยี่ยม", emoji: "🌟" };
+                } else if (avg >= 40) {
+                    rankData = { title: "พลเมืองทั่วไป 🥈", desc: "อยู่ในเกณฑ์มาตรฐาน ลองเพิ่มความใส่ใจสังคมอีกนิดจะดีมาก", emoji: "🙂" };
+                } else {
+                    rankData = { title: "พลเมืองฝึกหัด 🥉", desc: "อย่าเพิ่งท้อ! ลองคิดถึงส่วนรวมและกฎกติกาให้มากขึ้นในการเล่นรอบหน้า", emoji: "🌱" };
+                }
+
+                this.elements.eRank.innerText = rankData.title;
+                this.elements.eComment.innerText = rankData.desc;
+                this.elements.eEmoji.innerText = rankData.emoji;
+            },
+
+            restart() {
+                this.start();
+            },
+
+            clamp(val) {
+                return Math.min(100, Math.max(0, val));
+            }
+        };
+
+    </script>
+</body>
+</html>
