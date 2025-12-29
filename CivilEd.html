@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Citizen: ฮีโร่พลเมืองดี</title>
+    <!-- Google Fonts: Mali (ลายมือ) และ Kanit (อ่านง่าย) -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Mali', 'cursive'],
+                        body: ['Kanit', 'sans-serif'],
+                    },
+                    colors: {
+                        kid: {
+                            blue: '#4FACFE',
+                            blueDark: '#0072ff',
+                            orange: '#FFA067',
+                            orangeDark: '#FF6B6B',
+                            green: '#43E97B',
+                            greenDark: '#38F9D7',
+                            yellow: '#FFED4B',
+                            purple: '#A18CD1',
+                            bg: '#E0F7FA'
+                        }
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 3s infinite',
+                        'wiggle': 'wiggle 1s ease-in-out infinite',
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                    },
+                    keyframes: {
+                        wiggle: {
+                            '0%, 100%': { transform: 'rotate(-3deg)' },
+                            '50%': { transform: 'rotate(3deg)' },
+                        },
+                        pop: {
+                            '0%': { transform: 'scale(0.8)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #E0F7FA;
+            background-image: radial-gradient(#4FACFE 15%, transparent 16%), radial-gradient(#FFA067 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+        }
+
+        /* 3D Button Style */
+        .btn-3d {
+            transition: all 0.1s;
+            transform: translateY(0);
+            box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+        }
+        .btn-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.15);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+        }
+
+        .emoji-scene {
+            font-size: 4rem;
+            line-height: 1;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+        }
+
+        .stat-icon-wrapper {
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center font-body p-4">
+
+    <div id="app" class="w-full max-w-lg bg-white rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.1)] overflow-hidden relative min-h-[650px] flex flex-col border-4 border-white ring-4 ring-kid-blue/30">
+        
+        <!-- Game HUD -->
+        <header id="hud" class="hidden bg-white p-4 z-20 border-b-2 border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <div class="bg-kid-blue/20 text-kid-blueDark px-4 py-1 rounded-full font-display font-bold text-lg">
+                    ด่านที่ <span id="q-current">1</span>/5
+                </div>
+                <div class="text-right">
+                    <h1 class="font-display text-xl text-gray-700 font-bold">🦸 Super Citizen</h1>
+                </div>
+            </div>
+            
+            <!-- Stats Bar (HP Style) -->
+            <div class="grid grid-cols-3 gap-3">
+                <!-- Law -->
+                <div class="flex flex-col items-center">
+                    <div class="stat-icon-wrapper w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-xl mb-1 border-2 border-blue-200 z-10">⚖️</div>
+                    <div class="w-full bg-gray-200 rounded-full h-4 border-2 border-white shadow-inner overflow-hidden relative -mt-3 pt-2">
+                        <div id="bar-law" class="h-full bg-blue-400 transition-all duration-500" style="width: 50%"></div>
+                    </div>
+                </div>
+                <!-- Heart -->
+                <div class="flex flex-col items-center">
+                    <div class="stat-icon-wrapper w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center text-xl mb-1 border-2 border-pink-200 z-10">❤️</div>
+                    <div class="w-full bg-gray-200 rounded-full h-4 border-2 border-white shadow-inner overflow-hidden relative -mt-3 pt-2">
+                        <div id="bar-public" class="h-full bg-pink-400 transition-all duration-500" style="width: 50%"></div>
+                    </div>
+                </div>
+                <!-- Happy -->
+                <div class="flex flex-col items-center">
+                    <div class="stat-icon-wrapper w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-xl mb-1 border-2 border-yellow-200 z-10">😁</div>
+                    <div class="w-full bg-gray-200 rounded-full h-4 border-2 border-white shadow-inner overflow-hidden relative -mt-3 pt-2">
+                        <div id="bar-happy" class="h-full bg-yellow-400 transition-all duration-500" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow relative flex flex-col bg-gradient-to-b from-white to-blue-50">
+            
+            <!-- 1. Start Screen -->
+            <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-30 bg-white">
+                <div class="animate-bounce-slow mb-4 relative">
+                    <div class="text-[8rem] leading-none">🦸‍♂️</div>
+                    <div class="absolute bottom-0 right-0 text-6xl animate-wiggle origin-bottom">🇹🇭</div>
+                </div>
+                
+                <h1 class="font-display text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-kid-blueDark to-kid-purple mb-2 drop-shadow-sm">
+                    ภารกิจ<br>ฮีโร่พลเมืองดี
+                </h1>
+                <p class="font-body text-gray-500 text-lg mb-8">มาสะสมพลังความดี<br>เพื่อเป็นสุดยอดฮีโร่กันเถอะ!</p>
+
+                <div class="w-full max-w-xs space-y-4">
+                    <button onclick="game.start()" class="btn-3d w-full bg-gradient-to-r from-kid-green to-kid-greenDark text-white font-display text-2xl py-4 rounded-2xl border-b-4 border-green-600">
+                        🎮 เริ่มผจญภัย
+                    </button>
+                    <div class="text-xs text-gray-400 bg-gray-50 p-2 rounded-lg">
+                        *เกมนี้ช่วยฝึกการตัดสินใจตามหลักหน้าที่พลเมือง
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Gameplay Screen -->
+            <div id="game-screen" class="hidden flex-col flex-grow p-4 pb-20 overflow-y-auto animate-pop">
+                
+                <!-- Visual Scene -->
+                <div class="bg-white rounded-3xl p-6 shadow-sm border-2 border-dashed border-gray-200 mb-6 flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden">
+                    <div class="absolute inset-0 bg-kid-bg opacity-50"></div>
+                    <div id="scene-visual" class="emoji-scene relative z-10 flex items-end space-x-2">
+                        <!-- Emojis injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Question -->
+                <div class="mb-4 text-center">
+                    <h2 id="scenario-title" class="font-display text-2xl text-kid-blueDark font-bold mb-2"></h2>
+                    <p id="scenario-desc" class="text-gray-600 text-lg leading-relaxed"></p>
+                </div>
+
+                <!-- Choices -->
+                <div id="choices-container" class="space-y-4 mt-auto">
+                    <!-- Buttons injected via JS -->
+                </div>
+            </div>
+
+            <!-- 3. Feedback Modal -->
+            <div id="feedback-overlay" class="hidden absolute inset-0 bg-black/60 z-40 flex items-center justify-center p-4 backdrop-blur-sm">
+                <div class="bg-white w-full max-w-sm rounded-[2rem] p-6 text-center shadow-2xl animate-pop border-4 border-white relative overflow-hidden">
+                    <!-- Background Shine -->
+                    <div class="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-yellow-100 to-transparent opacity-50"></div>
+                    
+                    <div id="feedback-icon" class="text-7xl mb-2 relative z-10 drop-shadow-md">✨</div>
+                    <h3 id="feedback-title" class="font-display text-2xl font-bold text-gray-800 mb-2 relative z-10"></h3>
+                    <p id="feedback-desc" class="font-body text-gray-600 mb-6 relative z-10"></p>
+                    
+                    <!-- Score Board -->
+                    <div class="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100 relative z-10">
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div>
+                                <div class="text-xl">⚖️</div>
+                                <div id="change-law" class="font-display font-bold text-lg"></div>
+                            </div>
+                            <div>
+                                <div class="text-xl">❤️</div>
+                                <div id="change-public" class="font-display font-bold text-lg"></div>
+                            </div>
+                            <div>
+                                <div class="text-xl">😁</div>
+                                <div id="change-happy" class="font-display font-bold text-lg"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="game.next()" class="btn-3d w-full bg-kid-orange text-white font-display text-xl py-3 rounded-xl border-b-4 border-orange-600 relative z-10">
+                        ไปด่านต่อไป ⏩
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4. End Screen -->
+            <div id="end-screen" class="hidden absolute inset-0 bg-white z-30 flex flex-col items-center p-6 overflow-y-auto">
+                <div class="w-full text-center mt-6">
+                    <div class="relative inline-block">
+                        <div class="absolute inset-0 bg-yellow-300 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                        <div id="final-emoji" class="text-8xl relative z-10 animate-bounce-slow">🏆</div>
+                    </div>
+                    
+                    <h2 class="font-display text-3xl font-bold text-kid-blueDark mt-4 mb-1">จบภารกิจแล้ว!</h2>
+                    <p class="text-gray-500">คุณได้รับฉายา:</p>
+                    <div id="final-rank" class="font-display text-4xl font-bold text-kid-orangeDark my-4 drop-shadow-sm bg-orange-50 py-2 px-4 rounded-xl border-2 border-orange-100 inline-block transform -rotate-2"></div>
+                    <p id="final-comment" class="text-gray-600 px-4 mb-8"></p>
+                </div>
+
+                <!-- Final Bars -->
+                <div class="w-full bg-white rounded-2xl p-6 shadow-lg border border-gray-100 mb-8 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl bg-blue-100 p-2 rounded-lg">⚖️</span>
+                        <div class="flex-1">
+                            <div class="flex justify-between font-display text-sm text-gray-500 mb-1"><span>ความรู้กฎหมาย</span><span id="end-law"></span></div>
+                            <div class="h-3 w-full bg-gray-100 rounded-full"><div id="end-bar-law" class="h-full bg-blue-400 rounded-full"></div></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl bg-pink-100 p-2 rounded-lg">❤️</span>
+                        <div class="flex-1">
+                            <div class="flex justify-between font-display text-sm text-gray-500 mb-1"><span>จิตสาธารณะ</span><span id="end-public"></span></div>
+                            <div class="h-3 w-full bg-gray-100 rounded-full"><div id="end-bar-public" class="h-full bg-pink-400 rounded-full"></div></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl bg-yellow-100 p-2 rounded-lg">😁</span>
+                        <div class="flex-1">
+                            <div class="flex justify-between font-display text-sm text-gray-500 mb-1"><span>ความสุข</span><span id="end-happy"></span></div>
+                            <div class="h-3 w-full bg-gray-100 rounded-full"><div id="end-bar-happy" class="h-full bg-yellow-400 rounded-full"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="game.restart()" class="btn-3d w-full bg-kid-purple text-white font-display text-xl py-4 rounded-xl border-b-4 border-purple-700 mt-auto shadow-xl">
+                    🔄 เล่นใหม่อีกครั้ง
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Game Logic -->
+    <script>
+        // Scenarios Data (Adapted for Kids with Visual Scene Composition)
+        const scenarios = [
+            {
+                id: 1,
+                title: "ไฟเหลืองวัดใจ! 🚦",
+                desc: "หนูกำลังปั่นจักรยานไปโรงเรียน รีบมากเลย แต่พอถึงแยกไฟจราจรเปลี่ยนเป็น 'สีเหลือง' จะทำไงดี?",
+                visual: "🏫 🚴 💨 🚦", // Emoji Scene
+                choices: [
+                    {
+                        text: "เบรกทันที หยุดรอหลังเส้นขาว",
+                        feedback: {
+                            title: "ยอดเยี่ยมมาก! 👍",
+                            desc: "ปลอดภัยไว้ก่อน ถึงช้าหน่อยแต่ไม่เจ็บตัวนะ",
+                            icon: "✅"
+                        },
+                        effects: { law: 15, public: 5, happy: -10 }
+                    },
+                    {
+                        text: "ปั่นเร็วจี๋ ฝ่าไปเลย!",
+                        feedback: {
+                            title: "อันตรายนะ! 😱",
+                            desc: "การฝ่าไฟเหลืองอาจเกิดอุบัติเหตุชนกับรถอีกฝั่งได้ ไม่คุ้มเลย",
+                            icon: "💥"
+                        },
+                        effects: { law: -20, public: -10, happy: 10 }
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: "ขยะล้นถัง 🗑️",
+                desc: "ดื่มน้ำหวานหมดแก้วแล้ว จะทิ้งขยะแต่ถังตรงหน้ามันเต็มจนล้นออกมาเลย",
+                visual: "🥤 🙄 🗑️ 🚮",
+                choices: [
+                    {
+                        text: "วางแปะๆ ไว้ข้างบนนั่นแหละ",
+                        feedback: {
+                            title: "ไม่น่ารักเลย 🙅‍♂️",
+                            desc: "ถ้าลมพัดขยะจะปลิวเลอะเทอะ สงสารพี่คนกวาดขยะนะ",
+                            icon: "🧹"
+                        },
+                        effects: { law: -5, public: -20, happy: 5 }
+                    },
+                    {
+                        text: "ถือไปทิ้งถังอื่นที่ว่าง",
+                        feedback: {
+                            title: "จิตใจงดงาม! ✨",
+                            desc: "ยอมลำบากนิดหน่อย แต่ช่วยให้โรงเรียนเราสะอาดขึ้นเยอะเลย",
+                            icon: "🌟"
+                        },
+                        effects: { law: 5, public: 15, happy: -5 }
+                    }
+                ]
+            },
+            {
+                id: 3,
+                title: "คิวคุณป้ายาวเหยียด 🏧",
+                desc: "หนูต่อแถวซื้อขนม แต่คุณป้าข้างหน้าหาเหรียญนานมากกก แถวก็ยาว",
+                visual: "🍭 🧍 🧍‍♀️ 👵 👛",
+                choices: [
+                    {
+                        text: "ทำหน้าบึ้ง บ่นดังๆ ให้ป้ารีบ",
+                        feedback: {
+                            title: "ใจเย็นๆ นะ 😤",
+                            desc: "การบ่นทำให้ป้ายิ่งตกใจและช้ากว่าเดิม แถมบรรยากาศก็เสียด้วย",
+                            icon: "🌧️"
+                        },
+                        effects: { law: 0, public: -15, happy: 5 }
+                    },
+                    {
+                        text: "รอเงียบๆ หรือช่วยป้าหาเหรียญ",
+                        feedback: {
+                            title: "เด็กดีมีน้ำใจ 💖",
+                            desc: "การช่วยเหลือผู้ใหญ่เป็นสิ่งที่น่าชื่นชมมาก ป้าต้องดีใจแน่ๆ",
+                            icon: "👵"
+                        },
+                        effects: { law: 0, public: 15, happy: -5 }
+                    }
+                ]
+            },
+            {
+                id: 4,
+                title: "รูปหลุดเพื่อนซี้ 📱",
+                desc: "มีคนส่งรูปเพื่อนตอนหลับน้ำลายยืดมาในกลุ่มแชท ตลกมากเลย!",
+                visual: "😴 📸 🤣 📲",
+                choices: [
+                    {
+                        text: "ส่งต่อให้ห้องอื่นขำด้วย",
+                        feedback: {
+                            title: "หยุดเดี๋ยวนี้นะ! 🛑",
+                            desc: "เพื่อนจะอายมาก นี่คือการรังแกกัน (Bully) และผิดกฎหมายด้วย",
+                            icon: "🚫"
+                        },
+                        effects: { law: -25, public: -20, happy: 10 }
+                    },
+                    {
+                        text: "ไม่ส่งต่อ และบอกให้ลบรูป",
+                        feedback: {
+                            title: "ฮีโร่ออนไลน์! 🛡️",
+                            desc: "หนูช่วยปกป้องเพื่อน ไม่ซ้ำเติม นี่แหละเพื่อนแท้",
+                            icon: "🤝"
+                        },
+                        effects: { law: 10, public: 20, happy: -5 }
+                    }
+                ]
+            },
+            {
+                id: 5,
+                title: "เงินปริศนาช่วงเลือกตั้ง 🗳️",
+                desc: "ช่วงเลือกประธานนักเรียน มีรุ่นพี่เอาขนมมาแจกแล้วบอกว่า 'เลือกเบอร์ 1 นะ'",
+                visual: "🗳️ 🍬 🤫 🏫",
+                choices: [
+                    {
+                        text: "รับขนมไว้กินฟรีๆ (ลาภปาก)",
+                        feedback: {
+                            title: "ไม่ดีมั้ง? 💸",
+                            desc: "ของฟรีไม่มีในโลก นี่คือการ 'ซื้อเสียง' เล็กๆ ที่ทำลายประชาธิปไตยนะ",
+                            icon: "🙅"
+                        },
+                        effects: { law: -30, public: -25, happy: 20 }
+                    },
+                    {
+                        text: "ไม่รับ และบอกครู",
+                        feedback: {
+                            title: "ซื่อสัตย์มาก! 👏",
+                            desc: "เราต้องเลือกคนดีด้วยใจบริสุทธิ์ ไม่ใช่เพราะสินบน",
+                            icon: "🗳️"
+                        },
+                        effects: { law: 20, public: 20, happy: 0 }
+                    }
+                ]
+            }
+        ];
+
+        const game = {
+            currentIdx: 0,
+            stats: { law: 50, public: 50, happy: 50 },
+            
+            elements: {
+                startScreen: document.getElementById('start-screen'),
+                gameScreen: document.getElementById('game-screen'),
+                endScreen: document.getElementById('end-screen'),
+                hud: document.getElementById('hud'),
+                feedbackOverlay: document.getElementById('feedback-overlay'),
+                barLaw: document.getElementById('bar-law'),
+                barPublic: document.getElementById('bar-public'),
+                barHappy: document.getElementById('bar-happy'),
+                choicesContainer: document.getElementById('choices-container'),
+                qCurrent: document.getElementById('q-current'),
+                sceneVisual: document.getElementById('scene-visual'),
+                sTitle: document.getElementById('scenario-title'),
+                sDesc: document.getElementById('scenario-desc'),
+                fTitle: document.getElementById('feedback-title'),
+                fDesc: document.getElementById('feedback-desc'),
+                fIcon: document.getElementById('feedback-icon'),
+                cLaw: document.getElementById('change-law'),
+                cPublic: document.getElementById('change-public'),
+                cHappy: document.getElementById('change-happy'),
+                // End UI
+                eRank: document.getElementById('final-rank'),
+                eComment: document.getElementById('final-comment'),
+                eEmoji: document.getElementById('final-emoji'),
+                eLaw: document.getElementById('end-law'),
+                ePublic: document.getElementById('end-public'),
+                eHappy: document.getElementById('end-happy'),
+                ebLaw: document.getElementById('end-bar-law'),
+                ebPublic: document.getElementById('end-bar-public'),
+                ebHappy: document.getElementById('end-bar-happy'),
+            },
+
+            start() {
+                this.resetStats();
+                this.currentIdx = 0;
+                this.elements.startScreen.classList.add('hidden');
+                this.elements.endScreen.classList.add('hidden');
+                this.elements.hud.classList.remove('hidden');
+                this.elements.gameScreen.classList.remove('hidden');
+                this.elements.gameScreen.classList.add('flex');
+                this.updateStatsUI();
+                this.renderScenario();
+            },
+
+            resetStats() {
+                this.stats = { law: 50, public: 50, happy: 50 };
+            },
+
+            updateStatsUI() {
+                this.elements.barLaw.style.width = this.stats.law + '%';
+                this.elements.barPublic.style.width = this.stats.public + '%';
+                this.elements.barHappy.style.width = this.stats.happy + '%';
+                
+                // Color change logic based on health
+                const setBarColor = (el, val, baseColorClass) => {
+                    el.className = `h-full transition-all duration-500 rounded-full ${val < 30 ? 'bg-red-400' : baseColorClass}`;
+                };
+                setBarColor(this.elements.barLaw, this.stats.law, 'bg-blue-400');
+                setBarColor(this.elements.barPublic, this.stats.public, 'bg-pink-400');
+                setBarColor(this.elements.barHappy, this.stats.happy, 'bg-yellow-400');
+            },
+
+            renderScenario() {
+                const current = scenarios[this.currentIdx];
+                this.elements.qCurrent.innerText = this.currentIdx + 1;
+                this.elements.sTitle.innerText = current.title;
+                this.elements.sDesc.innerText = current.desc;
+                this.elements.sceneVisual.innerHTML = current.visual;
+
+                // Animate scene entry
+                this.elements.sceneVisual.classList.remove('animate-pop');
+                void this.elements.sceneVisual.offsetWidth; // trigger reflow
+                this.elements.sceneVisual.classList.add('animate-pop');
+
+                this.elements.choicesContainer.innerHTML = '';
+                current.choices.forEach((choice, index) => {
+                    const btn = document.createElement('button');
+                    // Colors alternating
+                    const colors = ['from-white to-blue-50 border-blue-200', 'from-white to-orange-50 border-orange-200'];
+                    const hoverColors = ['hover:bg-blue-100', 'hover:bg-orange-100'];
+                    
+                    btn.className = `w-full text-left bg-gradient-to-r ${colors[index % 2]} ${hoverColors[index % 2]} p-4 rounded-2xl shadow-sm border-2 transition-all duration-200 group active:scale-95`;
+                    btn.onclick = () => this.handleChoice(choice);
+                    
+                    btn.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="bg-white border-2 border-gray-100 w-10 h-10 flex items-center justify-center rounded-full mr-4 text-lg font-display font-bold text-gray-400 group-hover:text-kid-blueDark group-hover:border-kid-blueDark shadow-sm">
+                                ${String.fromCharCode(65 + index)}
+                            </div>
+                            <span class="font-body text-lg font-medium text-gray-700 group-hover:text-black">${choice.text}</span>
+                        </div>
+                    `;
+                    this.elements.choicesContainer.appendChild(btn);
+                });
+                
+                // Reset scroll
+                this.elements.gameScreen.scrollTop = 0;
+            },
+
+            handleChoice(choice) {
+                this.stats.law = this.clamp(this.stats.law + choice.effects.law);
+                this.stats.public = this.clamp(this.stats.public + choice.effects.public);
+                this.stats.happy = this.clamp(this.stats.happy + choice.effects.happy);
+                
+                this.updateStatsUI();
+
+                this.elements.fTitle.innerText = choice.feedback.title;
+                this.elements.fDesc.innerText = choice.feedback.desc;
+                this.elements.fIcon.innerText = choice.feedback.icon;
+
+                const formatChange = (val) => {
+                    const el = document.createElement('span');
+                    el.innerText = val > 0 ? `+${val}` : val;
+                    el.className = val > 0 ? 'text-green-500' : (val < 0 ? 'text-red-500' : 'text-gray-400');
+                    return el.outerHTML;
+                };
+
+                this.elements.cLaw.innerHTML = formatChange(choice.effects.law);
+                this.elements.cPublic.innerHTML = formatChange(choice.effects.public);
+                this.elements.cHappy.innerHTML = formatChange(choice.effects.happy);
+
+                this.elements.feedbackOverlay.classList.remove('hidden');
+            },
+
+            next() {
+                this.elements.feedbackOverlay.classList.add('hidden');
+                this.currentIdx++;
+                
+                if (this.currentIdx < scenarios.length) {
+                    this.renderScenario();
+                } else {
+                    this.endGame();
+                }
+            },
+
+            endGame() {
+                this.elements.gameScreen.classList.add('hidden');
+                this.elements.hud.classList.add('hidden');
+                this.elements.endScreen.classList.remove('hidden');
+
+                // Stats in End Screen
+                this.elements.eLaw.innerText = this.stats.law + "%";
+                this.elements.ebLaw.style.width = this.stats.law + "%";
+                this.elements.ePublic.innerText = this.stats.public + "%";
+                this.elements.ebPublic.style.width = this.stats.public + "%";
+                this.elements.eHappy.innerText = this.stats.happy + "%";
+                this.elements.ebHappy.style.width = this.stats.happy + "%";
+
+                // Rank
+                const avg = (this.stats.law + this.stats.public + this.stats.happy) / 3;
+                let rank = {};
+
+                if (avg >= 80) {
+                    rank = { title: "ฮีโร่ระดับเพชร 💎", desc: "สุดยอดไปเลย! หนูเป็นเด็กดีตัวอย่างที่น่าภูมิใจมาก", emoji: "🦸‍♂️" };
+                } else if (avg >= 60) {
+                    rank = { title: "ฮีโร่ระดับทอง 🥇", desc: "เก่งมาก! ทำดีต่อไปนะ สังคมน่าอยู่เพราะหนูเลย", emoji: "🌟" };
+                } else if (avg >= 40) {
+                    rank = { title: "ฮีโร่ฝึกหัด 🥈", desc: "ทำได้ดีแล้ว! ลองแบ่งปันและรักษากฎเพิ่มอีกนิดนะ", emoji: "✌️" };
+                } else {
+                    rank = { title: "ผู้กล้ามือใหม่ 🥉", desc: "สู้ๆ นะ! การเป็นคนดีอาจจะยากหน่อย แต่หนูทำได้แน่นอน", emoji: "🌱" };
+                }
+
+                this.elements.eRank.innerText = rank.title;
+                this.elements.eComment.innerText = rank.desc;
+                this.elements.eEmoji.innerText = rank.emoji;
+            },
+
+            restart() {
+                this.start();
+            },
+
+            clamp(val) { return Math.min(100, Math.max(0, val)); }
+        };
+    </script>
+</body>
+</html>
