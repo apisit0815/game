@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Wave Lab: ภารกิจพิชิตคลื่นเสียง</title>
+    <!-- Google Fonts: Kanit for Thai support -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #161b2c;
+            --primary-neon: #00f3ff; /* Cyan */
+            --secondary-neon: #ff0055; /* Pink/Red */
+            --text-color: #e0e6ed;
+            --accent-green: #00ff9d;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- Header --- */
+        header {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 243, 255, 0.1);
+            box-sizing: border-box;
+        }
+
+        h1 {
+            margin: 0;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: var(--primary-neon);
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+        }
+
+        .game-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 1.1rem;
+        }
+
+        .stat-box span {
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+
+        /* --- Main Layout --- */
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 95%;
+            max-width: 1000px;
+            margin-top: 20px;
+            gap: 20px;
+        }
+
+        /* --- Canvas Area --- */
+        .viewport {
+            position: relative;
+            background: #000;
+            border: 2px solid var(--panel-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 350px;
+            background: radial-gradient(circle at center, #1a2035 0%, #000000 100%);
+        }
+
+        .overlay-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 30px;
+            border: 1px solid var(--primary-neon);
+            border-radius: 10px;
+            text-align: center;
+            z-index: 10;
+            display: none; /* Hidden by default */
+        }
+
+        .overlay-msg h2 {
+            color: var(--primary-neon);
+            margin-top: 0;
+        }
+
+        .view-toggles {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--text-color);
+            color: var(--text-color);
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-family: 'Kanit', sans-serif;
+            font-size: 0.8rem;
+            transition: 0.3s;
+        }
+
+        .toggle-btn.active {
+            background: var(--primary-neon);
+            color: #000;
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 10px var(--primary-neon);
+        }
+
+        /* --- Controls & Info --- */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-neon);
+        }
+
+        .panel h3 {
+            margin-top: 0;
+            color: var(--primary-neon);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        /* Sliders */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.1);
+            height: 8px;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary-neon);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--primary-neon);
+        }
+
+        input[type=range]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        input[type=range]:disabled::-webkit-slider-thumb {
+            background: #555;
+            box-shadow: none;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Kanit', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-play {
+            background: #2c3e50;
+            color: white;
+            border: 1px solid #34495e;
+        }
+        .btn-play:hover { background: #34495e; }
+        .btn-play.playing { background: var(--secondary-neon); border-color: var(--secondary-neon); box-shadow: 0 0 10px var(--secondary-neon); }
+
+        .btn-check {
+            background: var(--accent-green);
+            color: #000;
+        }
+        .btn-check:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(0, 255, 157, 0.4);
+        }
+
+        /* Physics Data */
+        .formula-box {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+        .formula-box span { color: var(--primary-neon); }
+        .formula-box small { display: block; color: #888; font-family: 'Kanit', sans-serif; margin-top: 5px; font-size: 0.8rem;}
+
+        .accuracy-meter {
+            margin-top: 15px;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+        .accuracy-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff0055, #ffaa00, #00ff9d);
+            transition: width 0.3s;
+        }
+        
+        /* Modal for Level Start */
+        #levelModal {
+            display: flex; 
+        }
+        
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Sound Wave Lab <span style="font-size:0.8em; color:white;">| ภารกิจพิชิตคลื่นเสียง</span></h1>
+        <div class="game-stats">
+            <div class="stat-box">ด่านที่: <span id="levelDisplay">1</span></div>
+            <div class="stat-box">คะแนน: <span id="scoreDisplay">0</span></div>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- Game Viewport -->
+        <div class="viewport">
+            <div class="view-toggles">
+                <button class="toggle-btn active" onclick="setMode('graph')">มุมมองกราฟ (Graph)</button>
+                <button class="toggle-btn" onclick="setMode('particle')">มุมมองอนุภาค (Particles)</button>
+            </div>
+            <canvas id="waveCanvas"></canvas>
+            
+            <!-- Messages -->
+            <div id="msgOverlay" class="overlay-msg">
+                <h2 id="msgTitle">ถูกต้อง!</h2>
+                <p id="msgBody">ความถี่และแอมพลิจูดตรงกับเป้าหมาย</p>
+                <button class="btn btn-check" onclick="nextLevel()">ด่านต่อไป</button>
+            </div>
+
+            <div id="levelModal" class="overlay-msg" style="display:block;">
+                <h2>ยินดีต้อนรับสู่วิศวกรเสียงรุ่นฝึกหัด</h2>
+                <p>ภารกิจของคุณคือปรับจูนคลื่นเสียงให้ตรงกับ "คลื่นเป้าหมาย" (สีชมพู)</p>
+                <div style="text-align: left; margin: 15px 0;">
+                    <strong>ด่าน 1:</strong> ปรับระดับความดัง (Amplitude)<br>
+                    <strong>ด่าน 2:</strong> ปรับระดับเสียงสูง-ต่ำ (Frequency)<br>
+                    <strong>ด่าน 3:</strong> ปรับทั้งสองอย่าง<br>
+                    <strong>ด่าน 4:</strong> โจทย์ท้าทาย (มองไม่เห็นคลื่นเป้าหมาย)
+                </div>
+                <button class="btn btn-check" onclick="startGame()">เริ่มภารกิจ!</button>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="dashboard">
+            
+            <!-- Controls -->
+            <div class="panel">
+                <h3>แผงควบคุม (Control Panel)</h3>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>ความถี่ (Frequency)</span>
+                        <span id="freqVal">440 Hz</span>
+                    </div>
+                    <input type="range" id="freqSlider" min="200" max="800" value="440" step="1">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>แอมพลิจูด (Amplitude)</span>
+                        <span id="ampVal">1.0</span>
+                    </div>
+                    <input type="range" id="ampSlider" min="0" max="1.5" value="1.0" step="0.1">
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-play" id="playBtn" onclick="toggleAudio()">🔊 เล่นเสียง (Play)</button>
+                    <button class="btn btn-check" onclick="checkAnswer()">✅ ตรวจคำตอบ (Check)</button>
+                </div>
+            </div>
+
+            <!-- Education/Physics -->
+            <div class="panel">
+                <h3>ข้อมูลทางฟิสิกส์ (Physics Data)</h3>
+                
+                <div class="formula-box">
+                    v = fλ &nbsp;➔&nbsp; 340 = <span id="mathF">440</span> × <span id="mathL">0.77</span>
+                    <small>ความยาวคลื่น (Wavelength) λ = <span id="lambdaDisplay">0.77</span> m</small>
+                </div>
+
+                <div class="formula-box">
+                    T = 1/f &nbsp;➔&nbsp; T = 1/<span id="mathF2">440</span>
+                    <small>คาบ (Period) T = <span id="periodDisplay">0.0023</span> s</small>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <span style="font-size: 0.9rem; color: #aaa;">ความแม่นยำ (Match Accuracy)</span>
+                    <div class="accuracy-meter">
+                        <div class="accuracy-bar" id="accBar"></div>
+                    </div>
+                </div>
+
+                <div id="challengeText" style="margin-top:15px; color: var(--secondary-neon); font-weight:bold; display:none;">
+                    โจทย์: จงสร้างเสียงที่มีความถี่ <span id="targetFreqText"></span> Hz
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- Constants & Config ---
+    const SPEED_OF_SOUND = 340; // m/s
+    const BASE_FREQ = 200;
+    const MAX_FREQ = 800;
+
+    // --- State Management ---
+    const state = {
+        level: 1,
+        score: 0,
+        isPlaying: false,
+        viewMode: 'graph', // 'graph' or 'particle'
+        player: { f: 440, a: 1.0 },
+        target: { f: 440, a: 1.0 },
+        tolerance: 0.05, // 5% margin of error
+        particles: []
+    };
+
+    // --- DOM Elements ---
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+    const freqSlider = document.getElementById('freqSlider');
+    const ampSlider = document.getElementById('ampSlider');
+    const freqVal = document.getElementById('freqVal');
+    const ampVal = document.getElementById('ampVal');
+    const playBtn = document.getElementById('playBtn');
+    
+    // Stats Elements
+    const lambdaDisplay = document.getElementById('lambdaDisplay');
+    const periodDisplay = document.getElementById('periodDisplay');
+    const mathF = document.getElementById('mathF');
+    const mathL = document.getElementById('mathL');
+    const mathF2 = document.getElementById('mathF2');
+    const levelDisplay = document.getElementById('levelDisplay');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const accBar = document.getElementById('accBar');
+    const challengeText = document.getElementById('challengeText');
+    const targetFreqText = document.getElementById('targetFreqText');
+
+    // Modals
+    const msgOverlay = document.getElementById('msgOverlay');
+    const levelModal = document.getElementById('levelModal');
+    const msgTitle = document.getElementById('msgTitle');
+    const msgBody = document.getElementById('msgBody');
+
+    // --- Web Audio API ---
+    let audioCtx;
+    let oscillator;
+    let gainNode;
+
+    function initAudio() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            
+            oscillator = audioCtx.createOscillator();
+            gainNode = audioCtx.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.value = state.player.f;
+            
+            // Connect: Osc -> Gain -> Destination
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            // Start muted
+            gainNode.gain.value = 0;
+            oscillator.start();
+        }
+    }
+
+    function toggleAudio() {
+        if (!audioCtx) initAudio();
+
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        state.isPlaying = !state.isPlaying;
+        
+        if (state.isPlaying) {
+            // Ramp up volume prevents clicking
+            gainNode.gain.setTargetAtTime(state.player.a * 0.2, audioCtx.currentTime, 0.05);
+            playBtn.classList.add('playing');
+            playBtn.innerHTML = "🔊 หยุดเสียง (Stop)";
+        } else {
+            gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+            playBtn.classList.remove('playing');
+            playBtn.innerHTML = "🔊 เล่นเสียง (Play)";
+        }
+    }
+
+    function updateAudioParams() {
+        if (audioCtx && oscillator) {
+            oscillator.frequency.setTargetAtTime(state.player.f, audioCtx.currentTime, 0.05);
+            if (state.isPlaying) {
+                // Scale Amplitude to reasonable volume (Max 0.3 for safety)
+                gainNode.gain.setTargetAtTime(state.player.a * 0.2, audioCtx.currentTime, 0.05);
+            }
+        }
+    }
+
+    // --- Physics Engine ---
+    function updatePhysics() {
+        const f = state.player.f;
+        const lambda = SPEED_OF_SOUND / f;
+        const T = 1 / f;
+
+        // UI Updates
+        freqVal.innerText = `${f} Hz`;
+        ampVal.innerText = state.player.a.toFixed(1);
+        
+        lambdaDisplay.innerText = lambda.toFixed(3);
+        periodDisplay.innerText = T.toFixed(4);
+        mathF.innerText = f;
+        mathF2.innerText = f;
+        mathL.innerText = lambda.toFixed(2);
+
+        // Accuracy Calculation
+        const fDiff = Math.abs(state.player.f - state.target.f) / state.target.f;
+        const aDiff = Math.abs(state.player.a - state.target.a) / (state.target.a || 1); // Avoid div by zero
+        
+        // Weight: If level locks F, only count A, etc.
+        let accuracy = 0;
+        if (state.level === 1) accuracy = Math.max(0, 1 - aDiff);
+        else if (state.level === 2) accuracy = Math.max(0, 1 - fDiff);
+        else accuracy = Math.max(0, 1 - (fDiff + aDiff)/2);
+
+        accBar.style.width = `${accuracy * 100}%`;
+        
+        // Color based on accuracy
+        if (accuracy > 0.95) accBar.style.background = '#00ff9d';
+        else if (accuracy > 0.7) accBar.style.background = '#ffaa00';
+        else accBar.style.background = '#ff0055';
+    }
+
+    // --- Visualization ---
+    
+    // Init Particles
+    for(let i=0; i<200; i++) {
+        state.particles.push({
+            xBase: Math.random() * 1000, // Position without wave
+            y: Math.random() * 350,
+            offset: 0
+        });
+    }
+
+    function resizeCanvas() {
+        canvas.width = canvas.parentElement.offsetWidth;
+        canvas.height = 350;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    let time = 0;
+
+    function draw() {
+        requestAnimationFrame(draw);
+        
+        const w = canvas.width;
+        const h = canvas.height;
+        const midY = h / 2;
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Trail effect
+        ctx.fillRect(0, 0, w, h);
+
+        // Grid
+        drawGrid(w, h);
+
+        time += 0.05; // Animation speed
+
+        if (state.viewMode === 'graph') {
+            // Draw Target Wave (Ghost) - Skip if Level 4 (Challenge)
+            if (state.level !== 4) {
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(255, 0, 85, 0.4)'; // Ghost Pink
+                ctx.lineWidth = 4;
+                ctx.setLineDash([10, 10]); // Dashed line
+                for (let x = 0; x < w; x++) {
+                    // Normalize F for visual: map 200-800Hz to a viewable period
+                    const visualF = state.target.f / 50; 
+                    const visualA = state.target.a * 80; // Scale amplitude to pixels
+                    const y = midY - visualA * Math.sin((x * 0.02 * visualF) - time);
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Draw Player Wave
+            ctx.beginPath();
+            ctx.strokeStyle = '#00f3ff'; // Neon Cyan
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#00f3ff';
+            for (let x = 0; x < w; x++) {
+                const visualF = state.player.f / 50;
+                const visualA = state.player.a * 80;
+                const y = midY - visualA * Math.sin((x * 0.02 * visualF) - time);
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0; // Reset
+        } 
+        else if (state.viewMode === 'particle') {
+            // Longitudinal Wave Visualization
+            ctx.fillStyle = '#00f3ff';
+            
+            state.particles.forEach(p => {
+                // Visual Scaling
+                const visualF = state.player.f / 100;
+                const visualA = state.player.a * 20; // Displacement amount
+                
+                // x(t) = xBase + A * sin(kx - wt)
+                // Particle oscillates around xBase
+                const displacement = visualA * Math.sin((p.xBase * 0.01 * visualF) - time);
+                const drawX = (p.xBase + displacement) % w; // Wrap around
+                
+                ctx.beginPath();
+                ctx.arc(drawX, p.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Physics note for particles
+            ctx.fillStyle = '#fff';
+            ctx.font = "14px Kanit";
+            ctx.fillText("ส่วนอัด (Compression) & ส่วนขยาย (Rarefaction)", 20, 30);
+        }
+    }
+
+    function drawGrid(w, h) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        // Horizontal lines
+        for(let i=0; i<h; i+=50) {
+            ctx.moveTo(0, i);
+            ctx.lineTo(w, i);
+        }
+        // Vertical lines
+        for(let i=0; i<w; i+=50) {
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, h);
+        }
+        ctx.stroke();
+    }
+
+    function setMode(mode) {
+        state.viewMode = mode;
+        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    // --- Game Logic ---
+
+    function startGame() {
+        levelModal.style.display = 'none';
+        state.score = 0;
+        scoreDisplay.innerText = 0;
+        initLevel(1);
+    }
+
+    function initLevel(lvl) {
+        state.level = lvl;
+        levelDisplay.innerText = lvl;
+        msgOverlay.style.display = 'none';
+        challengeText.style.display = 'none';
+
+        // Defaults
+        freqSlider.disabled = false;
+        ampSlider.disabled = false;
+        
+        // Random Target Generation
+        // Quantize random values to make them matchable (steps of 10Hz, 0.1A)
+        const targetF = Math.floor(Math.random() * ((700 - 300)/10)) * 10 + 300; 
+        const targetA = (Math.floor(Math.random() * 10) + 3) / 10; // 0.3 - 1.2
+
+        state.target.f = targetF;
+        state.target.a = targetA;
+
+        // Reset Player to neutral
+        state.player.f = 440;
+        state.player.a = 1.0;
+        updateControls();
+
+        // Level Constraints
+        if (lvl === 1) {
+            // Match Amplitude, Freq Locked
+            state.target.f = 440; 
+            freqSlider.disabled = true;
+            showMessage("ภารกิจด่าน 1", "ปรับความสูงคลื่น (Amplitude) ให้ตรงกับเส้นสีชมพู", false);
+        } else if (lvl === 2) {
+            // Match Freq, Amp Locked
+            state.target.a = 1.0;
+            ampSlider.disabled = true;
+            showMessage("ภารกิจด่าน 2", "ปรับความถี่ (Frequency) ให้ตรงกับเส้นสีชมพู", false);
+        } else if (lvl === 3) {
+            showMessage("ภารกิจด่าน 3", "ปรับทั้งความถี่และแอมพลิจูดให้ตรงกัน", false);
+        } else if (lvl === 4) {
+            challengeText.style.display = 'block';
+            targetFreqText.innerText = state.target.f;
+            // Target Amp doesn't matter much for this "Blind" freq test, set to 1.0
+            state.target.a = 1.0; 
+            showMessage("ภารกิจด่าน 4 (Challenge)", "กราฟเป้าหมายหายไป! จงอ่านโจทย์แล้วตั้งค่าให้ถูกต้อง", false);
+        }
+        
+        // Slight delay to close the message automatically
+        setTimeout(() => { if(msgOverlay.style.display !== 'none') msgOverlay.style.display = 'none'; }, 3000);
+    }
+
+    function showMessage(title, body, isSuccess) {
+        msgTitle.innerText = title;
+        msgTitle.style.color = isSuccess ? '#00ff9d' : '#00f3ff';
+        msgBody.innerText = body;
+        msgOverlay.style.display = 'block';
+        
+        const nextBtn = msgOverlay.querySelector('button');
+        if (isSuccess) {
+            nextBtn.style.display = 'inline-block';
+            nextBtn.innerText = state.level === 4 ? "เล่นใหม่" : "ด่านต่อไป";
+            nextBtn.onclick = nextLevel;
+        } else {
+            nextBtn.style.display = 'inline-block';
+            nextBtn.innerText = "ตกลง";
+            nextBtn.onclick = () => msgOverlay.style.display = 'none';
+        }
+    }
+
+    function checkAnswer() {
+        const pF = state.player.f;
+        const pA = state.player.a;
+        const tF = state.target.f;
+        const tA = state.target.a;
+
+        let passF = Math.abs((pF - tF)/tF) <= state.tolerance;
+        let passA = Math.abs((pA - tA)/tA) <= 0.1; // Slightly looser for Amp
+
+        // Logic per level
+        let passed = false;
+        if (state.level === 1) passed = passA;
+        else if (state.level === 2) passed = passF;
+        else passed = passF && passA;
+
+        if (passed) {
+            state.score += 100 * state.level;
+            scoreDisplay.innerText = state.score;
+            
+            // Success Effect
+            canvas.style.borderColor = '#00ff9d';
+            setTimeout(() => canvas.style.borderColor = '#161b2c', 1000);
+
+            if (state.level === 4) {
+                showMessage("ยินดีด้วย!", "คุณพิชิตภารกิจ Sound Engineer ระดับสูงสุดแล้ว!", true);
+            } else {
+                showMessage("ถูกต้อง!", "ค่าคลื่นเสียงตรงกันเป๊ะ!", true);
+            }
+        } else {
+            // Hint
+            let hint = "";
+            if (!passF && state.level !== 1) hint += "ลองปรับความถี่ใหม่ ";
+            if (!passA && state.level !== 2) hint += "ลองปรับแอมพลิจูดใหม่";
+            alert("ยังไม่ตรงเป้าหมาย: " + hint);
+        }
+    }
+
+    function nextLevel() {
+        if (state.level < 4) {
+            initLevel(state.level + 1);
+        } else {
+            startGame(); // Reset
+        }
+    }
+
+    function updateControls() {
+        freqSlider.value = state.player.f;
+        ampSlider.value = state.player.a;
+        updatePhysics();
+    }
+
+    // --- Event Listeners ---
+    freqSlider.addEventListener('input', (e) => {
+        state.player.f = parseInt(e.target.value);
+        updatePhysics();
+        updateAudioParams();
+    });
+
+    ampSlider.addEventListener('input', (e) => {
+        state.player.a = parseFloat(e.target.value);
+        updatePhysics();
+        updateAudioParams();
+    });
+
+    // Start Loop
+    draw();
+    updatePhysics();
+
+</script>
+</body>
+</html>
