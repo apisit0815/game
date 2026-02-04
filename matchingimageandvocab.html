@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="th" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>English Vocabulary Match</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    * {
+      font-family: 'Nunito', sans-serif;
+    }
+    .card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card:hover {
+      transform: translateY(-4px);
+    }
+    .card.selected {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 4px #fbbf24, 0 10px 25px -5px rgba(0,0,0,0.2);
+    }
+    .card.correct {
+      animation: celebrate 0.6s ease-out;
+      background: linear-gradient(135deg, #10b981, #34d399) !important;
+    }
+    .card.wrong {
+      animation: shake 0.5s ease-out;
+    }
+    @keyframes celebrate {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15) rotate(5deg); }
+      100% { transform: scale(1); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-10px); }
+      40% { transform: translateX(10px); }
+      60% { transform: translateX(-10px); }
+      80% { transform: translateX(10px); }
+    }
+    @keyframes bounce-in {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .bounce-in {
+      animation: bounce-in 0.4s ease-out forwards;
+    }
+    @keyframes confetti {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-100px) rotate(720deg); opacity: 0; }
+    }
+    .confetti {
+      position: absolute;
+      animation: confetti 1s ease-out forwards;
+    }
+    .star {
+      animation: star-pulse 1s ease-in-out infinite;
+    }
+    @keyframes star-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+    .progress-fill {
+      transition: width 0.5s ease-out;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-300 overflow-auto">
+  <div id="app" class="h-full w-full p-4 md:p-6"><!-- Header -->
+   <div class="text-center mb-4 md:mb-6">
+    <h1 id="game-title" class="text-2xl md:text-4xl font-extrabold text-white drop-shadow-lg mb-2">🎮 จับคู่คำศัพท์ 🎮</h1>
+    <div class="flex items-center justify-center gap-4 flex-wrap">
+     <div class="bg-white/90 rounded-full px-4 py-2 shadow-lg"><span class="text-purple-600 font-bold">⭐ คะแนน: </span> <span id="score" class="text-2xl font-extrabold text-orange-500">0</span>
+     </div>
+     <div class="bg-white/90 rounded-full px-4 py-2 shadow-lg"><span class="text-purple-600 font-bold">🎯 ด่าน: </span> <span id="level" class="text-2xl font-extrabold text-pink-500">1</span>
+     </div>
+    </div><!-- Progress Bar -->
+    <div class="mt-3 max-w-md mx-auto">
+     <div class="bg-white/50 rounded-full h-4 overflow-hidden shadow-inner">
+      <div id="progress" class="progress-fill bg-gradient-to-r from-green-400 to-emerald-500 h-full rounded-full" style="width: 0%"></div>
+     </div>
+     <p class="text-white text-sm mt-1 font-semibold"><span id="matched">0</span>/4 คู่</p>
+    </div>
+   </div><!-- Feedback Message -->
+   <div id="feedback" class="text-center mb-4 h-8"><span class="text-xl md:text-2xl font-bold text-white drop-shadow-lg"></span>
+   </div><!-- Game Area -->
+   <div class="max-w-4xl mx-auto">
+    <div class="grid grid-cols-2 gap-4 md:gap-6"><!-- Pictures Column -->
+     <div>
+      <h2 class="text-center text-white font-bold text-lg mb-3 drop-shadow">🖼️ รูปภาพ</h2>
+      <div id="pictures" class="grid grid-cols-2 gap-3"></div>
+     </div><!-- Words Column -->
+     <div>
+      <h2 class="text-center text-white font-bold text-lg mb-3 drop-shadow">📝 คำศัพท์</h2>
+      <div id="words" class="grid grid-cols-2 gap-3"></div>
+     </div>
+    </div>
+   </div><!-- Level Complete Modal -->
+   <div id="modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-3xl p-8 text-center max-w-sm mx-4 transform scale-0 transition-transform duration-300" id="modal-content">
+     <div class="text-6xl mb-4">
+      🎉
+     </div>
+     <h2 class="text-3xl font-extrabold text-purple-600 mb-2">ยอดเยี่ยม!</h2>
+     <p class="text-gray-600 mb-4">คุณผ่านด่านนี้แล้ว!</p>
+     <div class="flex justify-center gap-1 mb-4" id="stars"></div><button id="next-level" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 px-8 rounded-full text-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg"> ด่านถัดไป ➡️ </button>
+    </div>
+   </div>
+  </div>
+  <script>
+    // Default configuration
+    const defaultConfig = {
+      game_title: '🎮 จับคู่คำศัพท์ 🎮',
+      success_message: 'เก่งมาก! 🌟',
+      try_again_message: 'ลองอีกครั้งนะ! 💪',
+      primary_color: '#8b5cf6',
+      secondary_color: '#ec4899',
+      background_color: '#fbbf24',
+      text_color: '#ffffff',
+      accent_color: '#10b981',
+      font_family: 'Nunito',
+      font_size: 16
+    };
+
+    // Vocabulary data with emojis as images
+    const allVocabulary = [
+      // Animals
+      { emoji: '🐱', word: 'CAT', category: 'animals' },
+      { emoji: '🐕', word: 'DOG', category: 'animals' },
+      { emoji: '🐘', word: 'ELEPHANT', category: 'animals' },
+      { emoji: '🦁', word: 'LION', category: 'animals' },
+      { emoji: '🐰', word: 'RABBIT', category: 'animals' },
+      { emoji: '🐦', word: 'BIRD', category: 'animals' },
+      { emoji: '🐟', word: 'FISH', category: 'animals' },
+      { emoji: '🦋', word: 'BUTTERFLY', category: 'animals' },
+      { emoji: '🐢', word: 'TURTLE', category: 'animals' },
+      { emoji: '🐸', word: 'FROG', category: 'animals' },
+      // Fruits
+      { emoji: '🍎', word: 'APPLE', category: 'fruits' },
+      { emoji: '🍌', word: 'BANANA', category: 'fruits' },
+      { emoji: '🍇', word: 'GRAPE', category: 'fruits' },
+      { emoji: '🍊', word: 'ORANGE', category: 'fruits' },
+      { emoji: '🍓', word: 'STRAWBERRY', category: 'fruits' },
+      { emoji: '🍉', word: 'WATERMELON', category: 'fruits' },
+      { emoji: '🍑', word: 'PEACH', category: 'fruits' },
+      { emoji: '🍋', word: 'LEMON', category: 'fruits' },
+      // Objects
+      { emoji: '📚', word: 'BOOK', category: 'objects' },
+      { emoji: '✏️', word: 'PENCIL', category: 'objects' },
+      { emoji: '🎒', word: 'BAG', category: 'objects' },
+      { emoji: '⌚', word: 'WATCH', category: 'objects' },
+      { emoji: '📱', word: 'PHONE', category: 'objects' },
+      { emoji: '🚗', word: 'CAR', category: 'objects' },
+      { emoji: '✈️', word: 'PLANE', category: 'objects' },
+      { emoji: '🚲', word: 'BICYCLE', category: 'objects' },
+      // Food
+      { emoji: '🍕', word: 'PIZZA', category: 'food' },
+      { emoji: '🍔', word: 'BURGER', category: 'food' },
+      { emoji: '🍦', word: 'ICE CREAM', category: 'food' },
+      { emoji: '🍩', word: 'DONUT', category: 'food' },
+      { emoji: '🎂', word: 'CAKE', category: 'food' },
+      { emoji: '🥛', word: 'MILK', category: 'food' },
+      // Nature
+      { emoji: '🌸', word: 'FLOWER', category: 'nature' },
+      { emoji: '🌳', word: 'TREE', category: 'nature' },
+      { emoji: '☀️', word: 'SUN', category: 'nature' },
+      { emoji: '🌙', word: 'MOON', category: 'nature' },
+      { emoji: '⭐', word: 'STAR', category: 'nature' },
+      { emoji: '🌈', word: 'RAINBOW', category: 'nature' },
+    ];
+
+    // Game state
+    let gameState = {
+      score: 0,
+      level: 1,
+      matched: 0,
+      selectedPicture: null,
+      selectedWord: null,
+      currentVocabulary: [],
+      matchedPairs: new Set()
+    };
+
+    // Shuffle array
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Get random vocabulary for current level
+    function getVocabularyForLevel() {
+      const shuffled = shuffle(allVocabulary);
+      return shuffled.slice(0, 4);
+    }
+
+    // Render game board
+    function renderGame(config) {
+      const picturesContainer = document.getElementById('pictures');
+      const wordsContainer = document.getElementById('words');
+      
+      picturesContainer.innerHTML = '';
+      wordsContainer.innerHTML = '';
+
+      const shuffledPictures = shuffle(gameState.currentVocabulary);
+      const shuffledWords = shuffle(gameState.currentVocabulary);
+
+      shuffledPictures.forEach((item, index) => {
+        const isMatched = gameState.matchedPairs.has(item.word);
+        const card = document.createElement('button');
+        card.className = `card bg-white rounded-2xl p-4 aspect-square flex items-center justify-center text-5xl md:text-6xl shadow-lg cursor-pointer bounce-in ${isMatched ? 'correct opacity-50' : ''}`;
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.dataset.word = item.word;
+        card.dataset.type = 'picture';
+        card.innerHTML = item.emoji;
+        card.disabled = isMatched;
+        
+        if (!isMatched) {
+          card.addEventListener('click', () => handleCardClick(card, 'picture', item.word, config));
+        }
+        
+        picturesContainer.appendChild(card);
+      });
+
+      shuffledWords.forEach((item, index) => {
+        const isMatched = gameState.matchedPairs.has(item.word);
+        const card = document.createElement('button');
+        card.className = `card bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl p-3 aspect-square flex items-center justify-center shadow-lg cursor-pointer bounce-in ${isMatched ? 'correct opacity-50' : ''}`;
+        card.style.animationDelay = `${index * 0.1 + 0.2}s`;
+        card.dataset.word = item.word;
+        card.dataset.type = 'word';
+        card.disabled = isMatched;
+        
+        const fontSize = config.font_size || defaultConfig.font_size;
+        card.innerHTML = `<span class="text-white font-extrabold text-center leading-tight" style="font-size: ${fontSize * 0.9}px">${item.word}</span>`;
+        
+        if (!isMatched) {
+          card.addEventListener('click', () => handleCardClick(card, 'word', item.word, config));
+        }
+        
+        wordsContainer.appendChild(card);
+      });
+
+      updateUI(config);
+    }
+
+    // Handle card click
+    function handleCardClick(card, type, word, config) {
+      // Clear previous selection of same type
+      document.querySelectorAll(`.card[data-type="${type}"]`).forEach(c => {
+        if (!c.classList.contains('correct')) {
+          c.classList.remove('selected');
+        }
+      });
+
+      card.classList.add('selected');
+
+      if (type === 'picture') {
+        gameState.selectedPicture = word;
+      } else {
+        gameState.selectedWord = word;
+      }
+
+      // Check for match
+      if (gameState.selectedPicture && gameState.selectedWord) {
+        checkMatch(config);
+      }
+    }
+
+    // Check if selected pair matches
+    function checkMatch(config) {
+      const feedback = document.getElementById('feedback');
+      const successMsg = config.success_message || defaultConfig.success_message;
+      const tryAgainMsg = config.try_again_message || defaultConfig.try_again_message;
+
+      if (gameState.selectedPicture === gameState.selectedWord) {
+        // Correct match!
+        feedback.innerHTML = `<span class="text-2xl font-bold text-white drop-shadow-lg">${successMsg}</span>`;
+        gameState.score += 10 * gameState.level;
+        gameState.matched++;
+        gameState.matchedPairs.add(gameState.selectedPicture);
+
+        // Animate matched cards
+        document.querySelectorAll('.card.selected').forEach(card => {
+          card.classList.remove('selected');
+          card.classList.add('correct');
+          card.disabled = true;
+          createConfetti(card);
+        });
+
+        // Check level complete
+        if (gameState.matched >= 4) {
+          setTimeout(() => showLevelComplete(config), 800);
+        }
+      } else {
+        // Wrong match
+        feedback.innerHTML = `<span class="text-2xl font-bold text-white drop-shadow-lg">${tryAgainMsg}</span>`;
+        
+        document.querySelectorAll('.card.selected').forEach(card => {
+          card.classList.add('wrong');
+          setTimeout(() => {
+            card.classList.remove('selected', 'wrong');
+          }, 500);
+        });
+      }
+
+      gameState.selectedPicture = null;
+      gameState.selectedWord = null;
+
+      updateUI(config);
+
+      // Clear feedback after delay
+      setTimeout(() => {
+        feedback.innerHTML = '';
+      }, 1500);
+    }
+
+    // Create confetti effect
+    function createConfetti(element) {
+      const colors = ['#fbbf24', '#ec4899', '#8b5cf6', '#10b981', '#f97316'];
+      const rect = element.getBoundingClientRect();
+      
+      for (let i = 0; i < 8; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = rect.left + rect.width / 2 + 'px';
+        confetti.style.top = rect.top + 'px';
+        confetti.style.width = '10px';
+        confetti.style.height = '10px';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        confetti.style.transform = `translateX(${(Math.random() - 0.5) * 100}px)`;
+        document.body.appendChild(confetti);
+        
+        setTimeout(() => confetti.remove(), 1000);
+      }
+    }
+
+    // Show level complete modal
+    function showLevelComplete(config) {
+      const modal = document.getElementById('modal');
+      const modalContent = document.getElementById('modal-content');
+      const starsContainer = document.getElementById('stars');
+      
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modalContent.style.transform = 'scale(1)';
+      }, 50);
+
+      // Show stars based on level
+      const starCount = Math.min(gameState.level, 5);
+      starsContainer.innerHTML = '';
+      for (let i = 0; i < starCount; i++) {
+        const star = document.createElement('span');
+        star.className = 'text-4xl star';
+        star.style.animationDelay = `${i * 0.1}s`;
+        star.textContent = '⭐';
+        starsContainer.appendChild(star);
+      }
+    }
+
+    // Start next level
+    function nextLevel(config) {
+      gameState.level++;
+      gameState.matched = 0;
+      gameState.matchedPairs.clear();
+      gameState.currentVocabulary = getVocabularyForLevel();
+      
+      const modal = document.getElementById('modal');
+      const modalContent = document.getElementById('modal-content');
+      
+      modalContent.style.transform = 'scale(0)';
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        renderGame(config);
+      }, 300);
+    }
+
+    // Update UI elements
+    function updateUI(config) {
+      document.getElementById('score').textContent = gameState.score;
+      document.getElementById('level').textContent = gameState.level;
+      document.getElementById('matched').textContent = gameState.matched;
+      document.getElementById('progress').style.width = `${(gameState.matched / 4) * 100}%`;
+      
+      const title = config.game_title || defaultConfig.game_title;
+      document.getElementById('game-title').textContent = title;
+    }
+
+    // Apply config changes
+    async function onConfigChange(config) {
+      const title = config.game_title || defaultConfig.game_title;
+      const fontFamily = config.font_family || defaultConfig.font_family;
+      const fontSize = config.font_size || defaultConfig.font_size;
+      
+      document.getElementById('game-title').textContent = title;
+      document.getElementById('game-title').style.fontFamily = `${fontFamily}, Nunito, sans-serif`;
+      document.getElementById('game-title').style.fontSize = `${fontSize * 2}px`;
+      
+      // Update word cards font
+      document.querySelectorAll('.card[data-type="word"] span').forEach(span => {
+        span.style.fontFamily = `${fontFamily}, Nunito, sans-serif`;
+        span.style.fontSize = `${fontSize * 0.9}px`;
+      });
+    }
+
+    // Initialize SDK
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [],
+          borderables: [],
+          fontEditable: {
+            get: () => config.font_family || defaultConfig.font_family,
+            set: (value) => {
+              config.font_family = value;
+              window.elementSdk.setConfig({ font_family: value });
+            }
+          },
+          fontSizeable: {
+            get: () => config.font_size || defaultConfig.font_size,
+            set: (value) => {
+              config.font_size = value;
+              window.elementSdk.setConfig({ font_size: value });
+            }
+          }
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ['game_title', config.game_title || defaultConfig.game_title],
+          ['success_message', config.success_message || defaultConfig.success_message],
+          ['try_again_message', config.try_again_message || defaultConfig.try_again_message]
+        ])
+      });
+    }
+
+    // Initialize game
+    function initGame() {
+      gameState.currentVocabulary = getVocabularyForLevel();
+      const config = window.elementSdk?.config || defaultConfig;
+      renderGame(config);
+      
+      document.getElementById('next-level').addEventListener('click', () => {
+        nextLevel(config);
+      });
+    }
+
+    initGame();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c8af534a139a193',t:'MTc3MDIxNjM5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
